@@ -11,9 +11,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -33,8 +33,12 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import com.oneliang.Constant;
 import com.oneliang.util.common.StringUtil;
 import com.oneliang.util.file.FileUtil;
+import com.oneliang.util.logging.Logger;
+import com.oneliang.util.logging.LoggerManager;
 
 public final class AsmUtil {
+
+	private static final Logger logger = LoggerManager.getLogger(AsmUtil.class);
 
 	private static final String REGEX="^((java[x]?)|(android)|(junit)|(dalvik))/[a-zA-Z0-9_/\\$]*$";
 	private static final String ANDROID_SUPPORT_REGEX="^android/support/[a-zA-Z0-9_/\\$]*$";
@@ -47,7 +51,7 @@ public final class AsmUtil {
 	 * @param printWriter
 	 */
 	public static void traceClass(String classFullFilename,PrintWriter printWriter) {
-		TraceClassVisitor traceClassVisitor = new TraceClassVisitor(new PrintWriter(System.out));
+		TraceClassVisitor traceClassVisitor = new TraceClassVisitor(printWriter);
 		ClassReader classReader;
 		try {
 			classReader = new ClassReader(new FileInputStream(classFullFilename));
@@ -130,10 +134,10 @@ public final class AsmUtil {
 		if(Modifier.isPublic(classDescription.access)){
 			classDescription.setPublicClass(true);
 		}
-		findClassWhichNeedToAdd(classDescription, className);
+		addDependClassName(classDescription, className);
 
 		classDescription.superClassName=superClassName;
-		findClassWhichNeedToAdd(classDescription, superClassName);
+		addDependClassName(classDescription, superClassName);
 		
 		
 		//class constant pool
@@ -145,7 +149,7 @@ public final class AsmUtil {
 				if(!StringUtil.isMatchRegex(constantClassName, BASIC_CLASS_REGEX)&&!constantClassName.equals(classNode.superName)){
 					Type type=Type.getType(constantClassName);
 					String internalName=type.getInternalName();
-					findClassWhichNeedToAdd(classDescription, internalName);
+					addDependClassName(classDescription, internalName);
 				}
 			}else if(entry.getValue().type=='G'){
 				String referenceFieldName=entry.getValue().strVal1+Constant.Symbol.DOT+entry.getValue().strVal2+Constant.Symbol.DOT+entry.getValue().objVal3;
@@ -169,7 +173,7 @@ public final class AsmUtil {
 			for(AnnotationNode annotationNode:annotationNodeList){
 				List<String> annotationList=parseAnnotationInAnnotationNode(annotationNode);
 				for(String annotationClassName:annotationList){
-					findClassWhichNeedToAdd(classDescription, annotationClassName);
+					addDependClassName(classDescription, annotationClassName);
 				}
 			}
 		}
@@ -194,7 +198,7 @@ public final class AsmUtil {
 				if(!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)){
 					Type type=Type.getType(descriptor);
 					String internalName=type.getInternalName();
-					findClassWhichNeedToAdd(classDescription, internalName);
+					addDependClassName(classDescription, internalName);
 				}
 			}
 		}
@@ -222,7 +226,7 @@ public final class AsmUtil {
 						String descriptor=type.getDescriptor();
 						if(!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)){
 							String internalName=type.getInternalName();
-							findClassWhichNeedToAdd(classDescription, internalName);
+							addDependClassName(classDescription, internalName);
 						}
 					}
 				}
@@ -231,7 +235,7 @@ public final class AsmUtil {
 					String descriptor=returnType.getDescriptor();
 					if(!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)){
 						String internalName=returnType.getInternalName();
-						findClassWhichNeedToAdd(classDescription, internalName);
+						addDependClassName(classDescription, internalName);
 					}
 				}
 				//method visible annotation
@@ -240,7 +244,7 @@ public final class AsmUtil {
 					for(AnnotationNode annotationNode:methodVisibleAnnotationNodeList){
 						List<String> annotationList=parseAnnotationInAnnotationNode(annotationNode);
 						for(String annotationClassName:annotationList){
-							findClassWhichNeedToAdd(classDescription, annotationClassName);
+							addDependClassName(classDescription, annotationClassName);
 						}
 					}
 				}
@@ -248,7 +252,7 @@ public final class AsmUtil {
 				List<LocalVariableAnnotationNode> methodVisibleLocalVariableAnnotationNodeList=methodNode.visibleLocalVariableAnnotations;
 				if(methodVisibleLocalVariableAnnotationNodeList!=null){
 					for(LocalVariableAnnotationNode localVariableAnnotationNode:methodVisibleLocalVariableAnnotationNodeList){
-//									System.out.println(localVariableAnnotationNode.desc);
+//									logger.verbose(localVariableAnnotationNode.desc);
 					}
 				}
 				//method visible parameter annotation
@@ -259,7 +263,7 @@ public final class AsmUtil {
 							for(AnnotationNode parameterAnnotationNode:parameterAnnotationNodeList){
 								List<String> annotationList=parseAnnotationInAnnotationNode(parameterAnnotationNode);
 								for(String annotationClassName:annotationList){
-									findClassWhichNeedToAdd(classDescription, annotationClassName);
+									addDependClassName(classDescription, annotationClassName);
 								}
 							}
 						}
@@ -269,7 +273,7 @@ public final class AsmUtil {
 				List<TypeAnnotationNode> methodTypeAnnotationNodeList=methodNode.visibleTypeAnnotations;
 				if(methodTypeAnnotationNodeList!=null){
 					for(TypeAnnotationNode typeAnnotationNode:methodTypeAnnotationNodeList){
-//									System.out.println(typeAnnotationNode.desc);
+//									logger.verbose(typeAnnotationNode.desc);
 					}
 				}
 			}
@@ -334,6 +338,12 @@ public final class AsmUtil {
 		return classDescriptionMap;
 	}
 
+	/**
+	 * find class description map
+	 * @param classesRootPath
+	 * @param referencedClassDescriptionListMap
+	 * @return Map<String,ClassDescription>
+	 */
 	public static Map<String,ClassDescription> findClassDescriptionMap(String classesRootPath,Map<String,List<ClassDescription>> referencedClassDescriptionListMap){
 		Map<String,ClassDescription> classDescriptionMap=new HashMap<String,ClassDescription>();
 		List<String> allClassFullFilenameList=FileUtil.findMatchFile(classesRootPath, Constant.Symbol.DOT+Constant.File.CLASS);
@@ -364,7 +374,12 @@ public final class AsmUtil {
 		return classDescriptionMap;
 	}
 
-	private static void findClassWhichNeedToAdd(ClassDescription classDescription,String internalName){
+	/**
+	 * add depend class name
+	 * @param classDescription
+	 * @param internalName
+	 */
+	private static void addDependClassName(ClassDescription classDescription,String internalName){
 		String className=internalName;
 		if(StringUtil.isMatchRegex(internalName, CLASS_ARRAY_REGEX)){
 			List<String> groupList=StringUtil.parseRegexGroup(internalName, CLASS_ARRAY_REGEX);
@@ -496,13 +511,13 @@ public final class AsmUtil {
 	 */
 	public static Map<String,String> findAllDependClassNameMap(String allClassesJar,List<String> rootClassNameList,boolean deep){
 		Map<String,List<ClassDescription>> referencedClassDescriptionListMap=new HashMap<String,List<ClassDescription>>();
-		Map<String,ClassDescription> classDescriptionMap=AsmUtil.findClassDescriptionMapWithJar(allClassesJar,referencedClassDescriptionListMap);
+		Map<String,ClassDescription> classDescriptionMap=findClassDescriptionMapWithJar(allClassesJar,referencedClassDescriptionListMap);
 		Map<String,String> allClassNameMap=new HashMap<String,String>();
 		Set<String> classNameKeySet=classDescriptionMap.keySet();
 		for(String className:classNameKeySet){
 			allClassNameMap.put(className, className);
 		}
-		return AsmUtil.findAllDependClassNameMap(rootClassNameList, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap, deep);
+		return findAllDependClassNameMap(rootClassNameList, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap, deep);
 	}
 
 	/**
@@ -524,16 +539,16 @@ public final class AsmUtil {
 			String className=queue.poll();
 			ClassDescription classDescription=classDescriptionMap.get(className);
 			if(classDescription!=null){
-//				System.out.println(className+","+classDescription.access+","+Modifier.isPublic(classDescription.access));
+				logger.verbose(className+","+classDescription.access+","+Modifier.isPublic(classDescription.access));
 				if(!dependClassNameMap.containsKey(className)){
 					dependClassNameMap.put(className, className);
 				}
 				for(String dependClassName:classDescription.dependClassNameMap.keySet()){
 					dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
+					logger.verbose("\tdepend:"+dependClassName);
 					if(!dependClassNameMap.containsKey(dependClassName)){
 						if(allClassNameMap.containsKey(dependClassName)){//has found
 							dependClassNameMap.put(dependClassName, dependClassName);
-//							System.out.println("\tdepend:"+dependClassName);
 							if(deep){
 								queue.add(dependClassName);
 							}else if(count<maxCount){
@@ -567,7 +582,7 @@ public final class AsmUtil {
 //										if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
 //											referencedClassDescription.setPublicClassChain(false);
 //										}
-										boolean result=AsmUtil.isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
+										boolean result=isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
 										if(result){
 											if(!dependClassNameMap.containsKey(referencedClassName)){
 												if(allClassNameMap.containsKey(referencedClassName)){
@@ -587,7 +602,7 @@ public final class AsmUtil {
 					}
 				}
 			}else{
-				System.out.println("\tclass is not exist:"+className);
+				logger.verbose("\tclass is not exist:"+className);
 			}
 			count++;
 		}
