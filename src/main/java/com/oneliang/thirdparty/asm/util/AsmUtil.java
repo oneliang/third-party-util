@@ -1,5 +1,6 @@
 package com.oneliang.thirdparty.asm.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -358,16 +359,52 @@ public final class AsmUtil {
 					while(iterator.hasNext()){
 						Entry<String,String> entry=iterator.next();
 						String dependClassName=entry.getValue();
-						String dependClassFullFilename=new File(classesRootPath+dependClassName+Constant.Symbol.DOT+Constant.File.CLASS).getAbsolutePath();
+//						String dependClassFullFilename=new File(classesRootPath+dependClassName+Constant.Symbol.DOT+Constant.File.CLASS).getAbsolutePath();
+						dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
 						List<ClassDescription> classDescriptionList=null;
-						if(referencedClassDescriptionListMap.containsKey(dependClassFullFilename)){
-							classDescriptionList=referencedClassDescriptionListMap.get(dependClassFullFilename);
+						if(referencedClassDescriptionListMap.containsKey(dependClassName)){
+							classDescriptionList=referencedClassDescriptionListMap.get(dependClassName);
 						}else{
 							classDescriptionList=new ArrayList<ClassDescription>();
-							referencedClassDescriptionListMap.put(dependClassFullFilename, classDescriptionList);
+							referencedClassDescriptionListMap.put(dependClassName, classDescriptionList);
 						}
 						classDescriptionList.add(classDescription);
 					}
+				}
+			}
+		}
+		return classDescriptionMap;
+	}
+
+	/**
+	 * find class description map
+	 * @param classNameByteArrayMap
+	 * @param referencedClassDescriptionListMap
+	 * @return Map<String,ClassDescription>
+	 */
+	public static Map<String,ClassDescription> findClassDescriptionMap(Map<String, byte[]> classNameByteArrayMap ,Map<String,List<ClassDescription>> referencedClassDescriptionListMap){
+		Map<String,ClassDescription> classDescriptionMap=new HashMap<String,ClassDescription>();
+		Iterator<Entry<String,byte[]>> classNameByteArrayEntryIterator=classNameByteArrayMap.entrySet().iterator();
+		while(classNameByteArrayEntryIterator.hasNext()){
+			Entry<String,byte[]> classNameByteArrayEntry=classNameByteArrayEntryIterator.next();
+			String className=classNameByteArrayEntry.getKey();
+			byte[] byteArray=classNameByteArrayEntry.getValue();
+			ClassDescription classDescription=findClassDescription(new ByteArrayInputStream(byteArray));
+			classDescriptionMap.put(className,classDescription);
+			if(referencedClassDescriptionListMap!=null){
+				Iterator<Entry<String,String>> iterator=classDescription.dependClassNameMap.entrySet().iterator();
+				while(iterator.hasNext()){
+					Entry<String,String> entry=iterator.next();
+					String dependClassName=entry.getValue();
+					dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
+					List<ClassDescription> classDescriptionList=null;
+					if(referencedClassDescriptionListMap.containsKey(dependClassName)){
+						classDescriptionList=referencedClassDescriptionListMap.get(dependClassName);
+					}else{
+						classDescriptionList=new ArrayList<ClassDescription>();
+						referencedClassDescriptionListMap.put(dependClassName, classDescriptionList);
+					}
+					classDescriptionList.add(classDescription);
 				}
 			}
 		}
@@ -504,33 +541,33 @@ public final class AsmUtil {
 
 	/**
 	 * find all depend class name map
-	 * @param allClassesJar
+	 * @param classesJar
 	 * @param rootClassNameList
 	 * @return Map<String,String>
 	 */
-	public static Map<String,String> findAllDependClassNameMap(String allClassesJar,List<String> rootClassNameList){
+	public static Map<String,String> findAllDependClassNameMap(String classesJar,Set<String> rootClassNameSet){
 		Map<String,List<ClassDescription>> referencedClassDescriptionListMap=new HashMap<String,List<ClassDescription>>();
-		Map<String,ClassDescription> classDescriptionMap=findClassDescriptionMapWithJar(allClassesJar,referencedClassDescriptionListMap);
+		Map<String,ClassDescription> classDescriptionMap=findClassDescriptionMapWithJar(classesJar,referencedClassDescriptionListMap);
 		Map<String,String> allClassNameMap=new HashMap<String,String>();
 		Set<String> classNameKeySet=classDescriptionMap.keySet();
 		for(String className:classNameKeySet){
 			allClassNameMap.put(className, className);
 		}
-		return findAllDependClassNameMap(rootClassNameList, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap);
+		return findAllDependClassNameMap(rootClassNameSet, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap);
 	}
 
 	/**
 	 * find all depend class name map
-	 * @param rootClassNameList
+	 * @param rootClassNameSet
 	 * @param classDescriptionMap
 	 * @param referencedClassDescriptionListMap
 	 * @param allClassNameMap
 	 * @return Map<String,String>
 	 */
-	public static Map<String,String> findAllDependClassNameMap(List<String> rootClassNameList,Map<String,ClassDescription> classDescriptionMap,Map<String,List<ClassDescription>> referencedClassDescriptionListMap,Map<String,String> allClassNameMap){
+	public static Map<String,String> findAllDependClassNameMap(Set<String> rootClassNameSet,Map<String,ClassDescription> classDescriptionMap,Map<String,List<ClassDescription>> referencedClassDescriptionListMap,Map<String,String> allClassNameMap){
 		Map<String,String> dependClassNameMap=new HashMap<String,String>();
 		Queue<String> queue=new ConcurrentLinkedQueue<String>();
-		queue.addAll(rootClassNameList);
+		queue.addAll(rootClassNameSet);
 		while(!queue.isEmpty()){
 			String className=queue.poll();
 			ClassDescription classDescription=classDescriptionMap.get(className);
