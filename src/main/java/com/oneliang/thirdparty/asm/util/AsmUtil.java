@@ -542,7 +542,7 @@ public final class AsmUtil {
 	/**
 	 * find all depend class name map
 	 * @param classesJar
-	 * @param rootClassNameList
+	 * @param rootClassNameSet
 	 * @param deep
 	 * @return Map<String,String>
 	 */
