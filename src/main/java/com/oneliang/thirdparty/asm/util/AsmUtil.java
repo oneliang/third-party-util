@@ -543,9 +543,10 @@ public final class AsmUtil {
 	 * find all depend class name map
 	 * @param classesJar
 	 * @param rootClassNameList
+	 * @param deep
 	 * @return Map<String,String>
 	 */
-	public static Map<String,String> findAllDependClassNameMap(String classesJar,Set<String> rootClassNameSet){
+	public static Map<String,String> findAllDependClassNameMap(String classesJar,Set<String> rootClassNameSet,boolean deep){
 		Map<String,List<ClassDescription>> referencedClassDescriptionListMap=new HashMap<String,List<ClassDescription>>();
 		Map<String,ClassDescription> classDescriptionMap=findClassDescriptionMapWithJar(classesJar,referencedClassDescriptionListMap);
 		Map<String,String> allClassNameMap=new HashMap<String,String>();
@@ -553,7 +554,7 @@ public final class AsmUtil {
 		for(String className:classNameKeySet){
 			allClassNameMap.put(className, className);
 		}
-		return findAllDependClassNameMap(rootClassNameSet, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap);
+		return findAllDependClassNameMap(rootClassNameSet, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap, deep);
 	}
 
 	/**
@@ -562,12 +563,15 @@ public final class AsmUtil {
 	 * @param classDescriptionMap
 	 * @param referencedClassDescriptionListMap
 	 * @param allClassNameMap
+	 * @param deep
 	 * @return Map<String,String>
 	 */
-	public static Map<String,String> findAllDependClassNameMap(Set<String> rootClassNameSet,Map<String,ClassDescription> classDescriptionMap,Map<String,List<ClassDescription>> referencedClassDescriptionListMap,Map<String,String> allClassNameMap){
+	public static Map<String,String> findAllDependClassNameMap(Set<String> rootClassNameSet,Map<String,ClassDescription> classDescriptionMap,Map<String,List<ClassDescription>> referencedClassDescriptionListMap,Map<String,String> allClassNameMap,boolean deep){
 		Map<String,String> dependClassNameMap=new HashMap<String,String>();
 		Queue<String> queue=new ConcurrentLinkedQueue<String>();
 		queue.addAll(rootClassNameSet);
+		int count=0;
+		final int maxCount=500;
 		while(!queue.isEmpty()){
 			String className=queue.poll();
 			ClassDescription classDescription=classDescriptionMap.get(className);
@@ -582,7 +586,11 @@ public final class AsmUtil {
 					if(!dependClassNameMap.containsKey(dependClassName)){
 						if(allClassNameMap.containsKey(dependClassName)){//has found
 							dependClassNameMap.put(dependClassName, dependClassName);
-							queue.add(dependClassName);
+							if(deep){
+								queue.add(dependClassName);
+							}else if(count<maxCount){
+								queue.add(dependClassName);
+							}
 							//set public chain
 //							if(classDescriptionMap.containsKey(dependClassName)){
 //								ClassDescription dependClassDescription=classDescriptionMap.get(dependClassName);
@@ -616,7 +624,11 @@ public final class AsmUtil {
 											if(!dependClassNameMap.containsKey(referencedClassName)){
 												if(allClassNameMap.containsKey(referencedClassName)){
 													dependClassNameMap.put(referencedClassName, referencedClassName);
-													queue.add(referencedClassName);
+													if(deep){
+														queue.add(referencedClassName);
+													}else if(count<maxCount){
+														queue.add(referencedClassName);
+													}
 												}
 											}
 										}
@@ -629,6 +641,7 @@ public final class AsmUtil {
 			}else{
 				logger.verbose("\tclass is not exist:"+className);
 			}
+			count++;
 		}
 		return dependClassNameMap;
 	}
