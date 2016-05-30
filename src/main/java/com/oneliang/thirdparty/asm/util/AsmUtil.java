@@ -347,7 +347,9 @@ public final class AsmUtil {
 	 */
 	public static Map<String,ClassDescription> findClassDescriptionMap(String classesRootPath,Map<String,List<ClassDescription>> referencedClassDescriptionListMap){
 		Map<String,ClassDescription> classDescriptionMap=new HashMap<String,ClassDescription>();
-		List<String> allClassFullFilenameList=FileUtil.findMatchFile(classesRootPath, Constant.Symbol.DOT+Constant.File.CLASS);
+		FileUtil.MatchOption matchOption=new FileUtil.MatchOption(classesRootPath);
+		matchOption.fileSuffix=Constant.Symbol.DOT+Constant.File.CLASS;
+		List<String> allClassFullFilenameList=FileUtil.findMatchFile(matchOption);
 		if(allClassFullFilenameList!=null){
 			classesRootPath=new File(classesRootPath).getAbsolutePath()+Constant.Symbol.SLASH_LEFT;
 			for(String classFullFilename:allClassFullFilenameList){
