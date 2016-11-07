@@ -7,45 +7,53 @@ import java.util.Map;
 
 public class ClassDescription {
 
-	public String className=null;
-	public String superClassName=null;
-	public int access=0;
-	public String sourceFile=null;
-	private boolean publicClass=false;
-	public List<String> dependClassNameList=new ArrayList<String>();
-	public Map<String,String> dependClassNameMap=new HashMap<String,String>();
-	public Map<String,String> referenceFieldNameMap=new HashMap<String,String>();
-	public Map<String,String> referenceMethodNameMap=new HashMap<String,String>();
-	public List<String> fieldNameList=new ArrayList<String>();
-	public List<String> privateFieldNameList=new ArrayList<String>();
-	public List<String> friendlyFieldNameList=new ArrayList<String>();
-	public List<String> protectedFieldNameList=new ArrayList<String>();
-	public List<String> privateMethodNameList=new ArrayList<String>();
-	public List<String> friendlyMethodNameList=new ArrayList<String>();
-	public List<String> protectedMethodNameList=new ArrayList<String>();
+	public String className = null;
+	public String superClassName = null;
+	public int access = 0;
+	public String sourceFile = null;
+	private boolean publicClass = false;
+	public List<String> dependClassNameList = new ArrayList<String>();
+	public Map<String, String> dependClassNameMap = new HashMap<String, String>();
+	public Map<String, String> referenceFieldNameMap = new HashMap<String, String>();
+	public Map<String, String> referenceMethodNameMap = new HashMap<String, String>();
+	public List<String> fieldNameList = new ArrayList<String>();
+	public List<String> privateFieldNameList = new ArrayList<String>();
+	public List<String> friendlyFieldNameList = new ArrayList<String>();
+	public List<String> protectedFieldNameList = new ArrayList<String>();
+	public List<String> methodNameList = new ArrayList<String>();
+	public List<String> privateMethodNameList = new ArrayList<String>();
+	public List<String> friendlyMethodNameList = new ArrayList<String>();
+	public List<String> protectedMethodNameList = new ArrayList<String>();
 
-	void setPublicClass(boolean publicClass){
-		this.publicClass=publicClass;
+	void setPublicClass(boolean publicClass) {
+		this.publicClass = publicClass;
 	}
-	public boolean isPublicClass(){
+
+	public boolean isPublicClass() {
 		return this.publicClass;
 	}
-	public boolean isNoPrivateField(){
+
+	public boolean isNoPrivateField() {
 		return this.privateFieldNameList.isEmpty();
 	}
-	public boolean isNoFriendlyField(){
+
+	public boolean isNoFriendlyField() {
 		return this.friendlyFieldNameList.isEmpty();
 	}
-	public boolean isNoProtectedField(){
+
+	public boolean isNoProtectedField() {
 		return this.protectedFieldNameList.isEmpty();
 	}
-	public boolean isNoPrivateMethod(){
+
+	public boolean isNoPrivateMethod() {
 		return this.privateMethodNameList.isEmpty();
 	}
-	public boolean isNoFriendlyMethod(){
+
+	public boolean isNoFriendlyMethod() {
 		return this.friendlyMethodNameList.isEmpty();
 	}
-	public boolean isNoProtectedMethod(){
+
+	public boolean isNoProtectedMethod() {
 		return this.protectedMethodNameList.isEmpty();
 	}
 }

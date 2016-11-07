@@ -41,17 +41,18 @@ public final class AsmUtil {
 
 	private static final Logger logger = LoggerManager.getLogger(AsmUtil.class);
 
-	private static final String REGEX="^((java[x]?)|(android)|(junit)|(dalvik))/[a-zA-Z0-9_/\\$]*$";
-	private static final String ANDROID_SUPPORT_REGEX="^android/support/[a-zA-Z0-9_/\\$]*$";
-	private static final String BASIC_CLASS_REGEX="^\\[*[ZCBSIFDJV]$";
-	private static final String CLASS_ARRAY_REGEX="^(\\[*L)";
+	private static final String REGEX = "^((java[x]?)|(android)|(junit)|(dalvik))/[a-zA-Z0-9_/\\$]*$";
+	private static final String ANDROID_SUPPORT_REGEX = "^android/support/[a-zA-Z0-9_/\\$]*$";
+	private static final String BASIC_CLASS_REGEX = "^\\[*[ZCBSIFDJV]$";
+	private static final String CLASS_ARRAY_REGEX = "^(\\[*L)";
 
 	/**
 	 * trace class
+	 * 
 	 * @param classFullFilename
 	 * @param printWriter
 	 */
-	public static void traceClass(String classFullFilename,PrintWriter printWriter) {
+	public static void traceClass(String classFullFilename, PrintWriter printWriter) {
 		TraceClassVisitor traceClassVisitor = new TraceClassVisitor(printWriter);
 		ClassReader classReader;
 		try {
@@ -64,29 +65,31 @@ public final class AsmUtil {
 
 	/**
 	 * find class description
+	 * 
 	 * @param classFullFilename
 	 * @return ClassDescription
 	 */
-	public static ClassDescription findClassDescription(String classFullFilename){
+	public static ClassDescription findClassDescription(String classFullFilename) {
 		return findClassDescription(classFullFilename, null);
 	}
 
 	/**
 	 * find class description
+	 * 
 	 * @param classFullFilename
 	 * @param fieldProcessor
 	 * @return ClassDescription
 	 */
-	public static ClassDescription findClassDescription(String classFullFilename, FieldProcessor fieldProcessor){
-		ClassDescription classDescription=null;
-		InputStream inputStream=null;
-		try{
-			inputStream=new FileInputStream(classFullFilename);
-			classDescription=findClassDescription(inputStream, fieldProcessor);
-		}catch(Exception e){
+	public static ClassDescription findClassDescription(String classFullFilename, FieldProcessor fieldProcessor) {
+		ClassDescription classDescription = null;
+		InputStream inputStream = null;
+		try {
+			inputStream = new FileInputStream(classFullFilename);
+			classDescription = findClassDescription(inputStream, fieldProcessor);
+		} catch (Exception e) {
 			throw new AsmUtilException(e);
-		}finally{
-			if(inputStream!=null){
+		} finally {
+			if (inputStream != null) {
 				try {
 					inputStream.close();
 				} catch (Exception e) {
@@ -99,230 +102,234 @@ public final class AsmUtil {
 
 	/**
 	 * find class description
+	 * 
 	 * @param inputStream
 	 * @return ClassDescription
 	 */
-	public static ClassDescription findClassDescription(InputStream inputStream){
+	public static ClassDescription findClassDescription(InputStream inputStream) {
 		return findClassDescription(inputStream, null);
 	}
 
 	/**
 	 * find class description
+	 * 
 	 * @param inputStream
 	 * @param fieldProcessor
 	 * @return ClassDescription
 	 */
-	public static ClassDescription findClassDescription(InputStream inputStream, FieldProcessor fieldProcessor){
-		ClassReader classReader=null;
-		try{
-			classReader=new ClassReader(inputStream);
-		}catch(Exception e){
+	public static ClassDescription findClassDescription(InputStream inputStream, FieldProcessor fieldProcessor) {
+		ClassReader classReader = null;
+		try {
+			classReader = new ClassReader(inputStream);
+		} catch (Exception e) {
 			throw new AsmUtilException(e);
 		}
-		ClassNode classNode=new ClassNode();
-		ConstantPool constantPool=new ConstantPool();
-		ClassConstantsCollector classConstantsCollector=new ClassConstantsCollector(classNode,constantPool);
+		ClassNode classNode = new ClassNode();
+		ConstantPool constantPool = new ConstantPool();
+		ClassConstantsCollector classConstantsCollector = new ClassConstantsCollector(classNode, constantPool);
 		classReader.accept(classConstantsCollector, 0);
-		//class name
-		String className=classNode.name;
-		//class super class
-		String superClassName=classNode.superName;
-		ClassDescription classDescription=new ClassDescription();
-		classDescription.className=className;
-		classDescription.sourceFile=classNode.sourceFile;
-		//class access
-		classDescription.access=classNode.access;
-		if(Modifier.isPublic(classDescription.access)){
+		// class name
+		String className = classNode.name;
+		// class super class
+		String superClassName = classNode.superName;
+		ClassDescription classDescription = new ClassDescription();
+		classDescription.className = className;
+		classDescription.sourceFile = classNode.sourceFile;
+		// class access
+		classDescription.access = classNode.access;
+		if (Modifier.isPublic(classDescription.access)) {
 			classDescription.setPublicClass(true);
 		}
 		addDependClassName(classDescription, className);
 
-		classDescription.superClassName=superClassName;
+		classDescription.superClassName = superClassName;
 		addDependClassName(classDescription, superClassName);
-		
-		
-		//class constant pool
-		Iterator<Entry<org.objectweb.asm.optimizer.Constant,org.objectweb.asm.optimizer.Constant>> iterator=constantPool.entrySet().iterator();
-		while(iterator.hasNext()){
-			Entry<org.objectweb.asm.optimizer.Constant,org.objectweb.asm.optimizer.Constant> entry=iterator.next();
-			if(entry.getValue().type=='C'){
-				String constantClassName=entry.getValue().strVal1;
-				if(!StringUtil.isMatchRegex(constantClassName, BASIC_CLASS_REGEX)&&!constantClassName.equals(classNode.superName)){
-					Type type=Type.getType(constantClassName);
-					String internalName=type.getInternalName();
+
+		// class constant pool
+		Iterator<Entry<org.objectweb.asm.optimizer.Constant, org.objectweb.asm.optimizer.Constant>> iterator = constantPool.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Entry<org.objectweb.asm.optimizer.Constant, org.objectweb.asm.optimizer.Constant> entry = iterator.next();
+			if (entry.getValue().type == 'C') {
+				String constantClassName = entry.getValue().strVal1;
+				if (!StringUtil.isMatchRegex(constantClassName, BASIC_CLASS_REGEX) && !constantClassName.equals(classNode.superName)) {
+					Type type = Type.getType(constantClassName);
+					String internalName = type.getInternalName();
 					addDependClassName(classDescription, internalName);
 				}
-			}else if(entry.getValue().type=='G'){
-				String referenceFieldName=entry.getValue().strVal1+Constant.Symbol.DOT+entry.getValue().strVal2+Constant.Symbol.DOT+entry.getValue().objVal3;
-				if(!classDescription.referenceFieldNameMap.containsKey(referenceFieldName)){
-					classDescription.referenceFieldNameMap.put(referenceFieldName,referenceFieldName);
-					if(fieldProcessor!=null){
-						String referenceFieldNameWithoutType=entry.getValue().strVal1+Constant.Symbol.DOT+entry.getValue().strVal2;
-						fieldProcessor.process(referenceFieldNameWithoutType,classDescription);
+			} else if (entry.getValue().type == 'G') {
+				String referenceFieldName = entry.getValue().strVal1 + Constant.Symbol.DOT + entry.getValue().strVal2 + Constant.Symbol.DOT + entry.getValue().objVal3;
+				if (!classDescription.referenceFieldNameMap.containsKey(referenceFieldName)) {
+					classDescription.referenceFieldNameMap.put(referenceFieldName, referenceFieldName);
+					if (fieldProcessor != null) {
+						String referenceFieldNameWithoutType = entry.getValue().strVal1 + Constant.Symbol.DOT + entry.getValue().strVal2;
+						fieldProcessor.process(referenceFieldNameWithoutType, classDescription);
 					}
 				}
-			}else if(entry.getValue().type=='M'){
-				String referenceMethodName=entry.getValue().strVal1+Constant.Symbol.DOT+entry.getValue().strVal2+Constant.Symbol.DOT+entry.getValue().objVal3;
-				if(!classDescription.referenceMethodNameMap.containsKey(referenceMethodName)){
-					classDescription.referenceMethodNameMap.put(referenceMethodName,referenceMethodName);
+			} else if (entry.getValue().type == 'M') {
+				String referenceMethodName = entry.getValue().strVal1 + Constant.Symbol.DOT + entry.getValue().strVal2 + Constant.Symbol.DOT + entry.getValue().objVal3;
+				if (!classDescription.referenceMethodNameMap.containsKey(referenceMethodName)) {
+					classDescription.referenceMethodNameMap.put(referenceMethodName, referenceMethodName);
 				}
 			}
 		}
-		//class annotation
-		List<AnnotationNode> annotationNodeList=classNode.visibleAnnotations;
-		if(annotationNodeList!=null){
-			for(AnnotationNode annotationNode:annotationNodeList){
-				List<String> annotationList=parseAnnotationInAnnotationNode(annotationNode);
-				for(String annotationClassName:annotationList){
+		// class annotation
+		List<AnnotationNode> annotationNodeList = classNode.visibleAnnotations;
+		if (annotationNodeList != null) {
+			for (AnnotationNode annotationNode : annotationNodeList) {
+				List<String> annotationList = parseAnnotationInAnnotationNode(annotationNode);
+				for (String annotationClassName : annotationList) {
 					addDependClassName(classDescription, annotationClassName);
 				}
 			}
 		}
-		//class field
-		List<FieldNode> fieldNodeList=classNode.fields;
-		if(fieldNodeList!=null){
-			for(FieldNode fieldNode:fieldNodeList){
-				String fieldName=className+Constant.Symbol.DOT+fieldNode.name+Constant.Symbol.DOT+fieldNode.desc;
+		// class field
+		List<FieldNode> fieldNodeList = classNode.fields;
+		if (fieldNodeList != null) {
+			for (FieldNode fieldNode : fieldNodeList) {
+				String fieldName = className + Constant.Symbol.DOT + fieldNode.name + Constant.Symbol.DOT + fieldNode.desc;
 				classDescription.fieldNameList.add(fieldName);
-				//save field desc
-				if(!Modifier.isPublic(fieldNode.access)){
-					if(Modifier.isPrivate(fieldNode.access)){
+				// save field desc
+				if (!Modifier.isPublic(fieldNode.access)) {
+					if (Modifier.isPrivate(fieldNode.access)) {
 						classDescription.privateFieldNameList.add(fieldName);
-					}else if(Modifier.isProtected(fieldNode.access)){
+					} else if (Modifier.isProtected(fieldNode.access)) {
 						classDescription.protectedFieldNameList.add(fieldName);
-					}else{
+					} else {
 						classDescription.friendlyFieldNameList.add(fieldName);
 					}
 				}
-				//find depend class
-				String descriptor=fieldNode.desc;
-				if(!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)){
-					Type type=Type.getType(descriptor);
-					String internalName=type.getInternalName();
+				// find depend class
+				String descriptor = fieldNode.desc;
+				if (!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)) {
+					Type type = Type.getType(descriptor);
+					String internalName = type.getInternalName();
 					addDependClassName(classDescription, internalName);
 				}
 			}
 		}
-		//class method
-		List<MethodNode> methodNodeList=classNode.methods;
-		if(methodNodeList!=null){
-			for(MethodNode methodNode:methodNodeList){
-				//save method desc
-				if(!Modifier.isPublic(methodNode.access)&&!methodNode.name.equals("<clinit>")){
-					String methodName=className+Constant.Symbol.DOT+methodNode.name+Constant.Symbol.DOT+methodNode.desc;
-					if(Modifier.isPrivate(methodNode.access)){
+		// class method
+		List<MethodNode> methodNodeList = classNode.methods;
+		if (methodNodeList != null) {
+			for (MethodNode methodNode : methodNodeList) {
+				String methodName = className + Constant.Symbol.DOT + methodNode.name + Constant.Symbol.DOT + methodNode.desc;
+				classDescription.methodNameList.add(methodName);
+				// save method desc
+				if (!Modifier.isPublic(methodNode.access) && !methodNode.name.equals("<clinit>")) {
+					if (Modifier.isPrivate(methodNode.access)) {
 						classDescription.privateMethodNameList.add(methodName);
-					}else if(Modifier.isProtected(methodNode.access)){
+					} else if (Modifier.isProtected(methodNode.access)) {
 						classDescription.protectedMethodNameList.add(methodName);
-					}else{
+					} else {
 						classDescription.friendlyMethodNameList.add(methodName);
 					}
 				}
-				//find depend class
-				//method argument
-				Type[] argumentTypes=Type.getArgumentTypes(methodNode.desc);
-				Type returnType=Type.getReturnType(methodNode.desc);
-				if(argumentTypes!=null){
-					for(Type type:argumentTypes){
-						String descriptor=type.getDescriptor();
-						if(!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)){
-							String internalName=type.getInternalName();
+				// find depend class
+				// method argument
+				Type[] argumentTypes = Type.getArgumentTypes(methodNode.desc);
+				Type returnType = Type.getReturnType(methodNode.desc);
+				if (argumentTypes != null) {
+					for (Type type : argumentTypes) {
+						String descriptor = type.getDescriptor();
+						if (!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)) {
+							String internalName = type.getInternalName();
 							addDependClassName(classDescription, internalName);
 						}
 					}
 				}
-				//method return
-				if(returnType!=null){
-					String descriptor=returnType.getDescriptor();
-					if(!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)){
-						String internalName=returnType.getInternalName();
+				// method return
+				if (returnType != null) {
+					String descriptor = returnType.getDescriptor();
+					if (!StringUtil.isMatchRegex(descriptor, BASIC_CLASS_REGEX)) {
+						String internalName = returnType.getInternalName();
 						addDependClassName(classDescription, internalName);
 					}
 				}
-				//method visible annotation
-				List<AnnotationNode> methodVisibleAnnotationNodeList=methodNode.visibleAnnotations;
-				if(methodVisibleAnnotationNodeList!=null){
-					for(AnnotationNode annotationNode:methodVisibleAnnotationNodeList){
-						List<String> annotationList=parseAnnotationInAnnotationNode(annotationNode);
-						for(String annotationClassName:annotationList){
+				// method visible annotation
+				List<AnnotationNode> methodVisibleAnnotationNodeList = methodNode.visibleAnnotations;
+				if (methodVisibleAnnotationNodeList != null) {
+					for (AnnotationNode annotationNode : methodVisibleAnnotationNodeList) {
+						List<String> annotationList = parseAnnotationInAnnotationNode(annotationNode);
+						for (String annotationClassName : annotationList) {
 							addDependClassName(classDescription, annotationClassName);
 						}
 					}
 				}
-				//method visible local variable annotation
-				List<LocalVariableAnnotationNode> methodVisibleLocalVariableAnnotationNodeList=methodNode.visibleLocalVariableAnnotations;
-				if(methodVisibleLocalVariableAnnotationNodeList!=null){
-					for(LocalVariableAnnotationNode localVariableAnnotationNode:methodVisibleLocalVariableAnnotationNodeList){
-//									logger.verbose(localVariableAnnotationNode.desc);
+				// method visible local variable annotation
+				List<LocalVariableAnnotationNode> methodVisibleLocalVariableAnnotationNodeList = methodNode.visibleLocalVariableAnnotations;
+				if (methodVisibleLocalVariableAnnotationNodeList != null) {
+					for (LocalVariableAnnotationNode localVariableAnnotationNode : methodVisibleLocalVariableAnnotationNodeList) {
+						// logger.verbose(localVariableAnnotationNode.desc);
 					}
 				}
-				//method visible parameter annotation
-				List<AnnotationNode>[] methodVisibleParameterAnnotationNodeArray=methodNode.visibleParameterAnnotations;
-				if(methodVisibleParameterAnnotationNodeArray!=null){
-					for(List<AnnotationNode> parameterAnnotationNodeList:methodVisibleParameterAnnotationNodeArray){
-						if(parameterAnnotationNodeList!=null){
-							for(AnnotationNode parameterAnnotationNode:parameterAnnotationNodeList){
-								List<String> annotationList=parseAnnotationInAnnotationNode(parameterAnnotationNode);
-								for(String annotationClassName:annotationList){
+				// method visible parameter annotation
+				List<AnnotationNode>[] methodVisibleParameterAnnotationNodeArray = methodNode.visibleParameterAnnotations;
+				if (methodVisibleParameterAnnotationNodeArray != null) {
+					for (List<AnnotationNode> parameterAnnotationNodeList : methodVisibleParameterAnnotationNodeArray) {
+						if (parameterAnnotationNodeList != null) {
+							for (AnnotationNode parameterAnnotationNode : parameterAnnotationNodeList) {
+								List<String> annotationList = parseAnnotationInAnnotationNode(parameterAnnotationNode);
+								for (String annotationClassName : annotationList) {
 									addDependClassName(classDescription, annotationClassName);
 								}
 							}
 						}
 					}
 				}
-				//method visible type annotation
-				List<TypeAnnotationNode> methodTypeAnnotationNodeList=methodNode.visibleTypeAnnotations;
-				if(methodTypeAnnotationNodeList!=null){
-					for(TypeAnnotationNode typeAnnotationNode:methodTypeAnnotationNodeList){
-//									logger.verbose(typeAnnotationNode.desc);
+				// method visible type annotation
+				List<TypeAnnotationNode> methodTypeAnnotationNodeList = methodNode.visibleTypeAnnotations;
+				if (methodTypeAnnotationNodeList != null) {
+					for (TypeAnnotationNode typeAnnotationNode : methodTypeAnnotationNodeList) {
+						// logger.verbose(typeAnnotationNode.desc);
 					}
 				}
 			}
 		}
-		
+
 		return classDescription;
 	}
 
 	/**
 	 * find class description map with jar
+	 * 
 	 * @param allClassesJarFullFilename
 	 * @param referencedClassDescriptionListMap
 	 * @return Map<String,ClassDescription>
 	 */
-	public static Map<String,ClassDescription> findClassDescriptionMapWithJar(String allClassesJarFullFilename,Map<String,List<ClassDescription>> referencedClassDescriptionListMap){
+	public static Map<String, ClassDescription> findClassDescriptionMapWithJar(String allClassesJarFullFilename, Map<String, List<ClassDescription>> referencedClassDescriptionListMap) {
 		return findClassDescriptionMapWithJar(allClassesJarFullFilename, referencedClassDescriptionListMap, null);
 	}
 
 	/**
 	 * find class description map with jar
+	 * 
 	 * @param allClassesJarFullFilename
 	 * @param referencedClassDescriptionListMap
 	 * @return Map<String,ClassDescription>
 	 */
-	public static Map<String,ClassDescription> findClassDescriptionMapWithJar(String allClassesJarFullFilename,Map<String,List<ClassDescription>> referencedClassDescriptionListMap, FieldProcessor fieldProcessor){
-		Map<String,ClassDescription> classDescriptionMap=new HashMap<String,ClassDescription>();
-		try{
-			ZipFile zipFile=new ZipFile(allClassesJarFullFilename);
-			try{
+	public static Map<String, ClassDescription> findClassDescriptionMapWithJar(String allClassesJarFullFilename, Map<String, List<ClassDescription>> referencedClassDescriptionListMap, FieldProcessor fieldProcessor) {
+		Map<String, ClassDescription> classDescriptionMap = new HashMap<String, ClassDescription>();
+		try {
+			ZipFile zipFile = new ZipFile(allClassesJarFullFilename);
+			try {
 				Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
-				while(enumeration.hasMoreElements()){
-					ZipEntry zipEntry=enumeration.nextElement();
-					String zipEntryName=zipEntry.getName();
-					if(zipEntryName.endsWith(Constant.Symbol.DOT+Constant.File.CLASS)){
-						InputStream inputStream=zipFile.getInputStream(zipEntry);
-						ClassDescription classDescription=findClassDescription(inputStream,fieldProcessor);
-						classDescriptionMap.put(zipEntryName,classDescription);
-						if(referencedClassDescriptionListMap!=null){
-							Iterator<Entry<String,String>> iterator=classDescription.dependClassNameMap.entrySet().iterator();
-							while(iterator.hasNext()){
-								Entry<String,String> entry=iterator.next();
-								String dependClassName=entry.getValue();
-								dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
-								List<ClassDescription> classDescriptionList=null;
-								if(referencedClassDescriptionListMap.containsKey(dependClassName)){
-									classDescriptionList=referencedClassDescriptionListMap.get(dependClassName);
-								}else{
-									classDescriptionList=new ArrayList<ClassDescription>();
+				while (enumeration.hasMoreElements()) {
+					ZipEntry zipEntry = enumeration.nextElement();
+					String zipEntryName = zipEntry.getName();
+					if (zipEntryName.endsWith(Constant.Symbol.DOT + Constant.File.CLASS)) {
+						InputStream inputStream = zipFile.getInputStream(zipEntry);
+						ClassDescription classDescription = findClassDescription(inputStream, fieldProcessor);
+						classDescriptionMap.put(zipEntryName, classDescription);
+						if (referencedClassDescriptionListMap != null) {
+							Iterator<Entry<String, String>> iterator = classDescription.dependClassNameMap.entrySet().iterator();
+							while (iterator.hasNext()) {
+								Entry<String, String> entry = iterator.next();
+								String dependClassName = entry.getValue();
+								dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+								List<ClassDescription> classDescriptionList = null;
+								if (referencedClassDescriptionListMap.containsKey(dependClassName)) {
+									classDescriptionList = referencedClassDescriptionListMap.get(dependClassName);
+								} else {
+									classDescriptionList = new ArrayList<ClassDescription>();
 									referencedClassDescriptionListMap.put(dependClassName, classDescriptionList);
 								}
 								classDescriptionList.add(classDescription);
@@ -330,10 +337,10 @@ public final class AsmUtil {
 						}
 					}
 				}
-			}finally{
+			} finally {
 				zipFile.close();
 			}
-		}catch (Exception e) {
+		} catch (Exception e) {
 			throw new AsmUtilException(e);
 		}
 		return classDescriptionMap;
@@ -341,33 +348,35 @@ public final class AsmUtil {
 
 	/**
 	 * find class description map
+	 * 
 	 * @param classesRootPath
 	 * @param referencedClassDescriptionListMap
 	 * @return Map<String,ClassDescription>
 	 */
-	public static Map<String,ClassDescription> findClassDescriptionMap(String classesRootPath,Map<String,List<ClassDescription>> referencedClassDescriptionListMap){
-		Map<String,ClassDescription> classDescriptionMap=new HashMap<String,ClassDescription>();
-		FileUtil.MatchOption matchOption=new FileUtil.MatchOption(classesRootPath);
-		matchOption.fileSuffix=Constant.Symbol.DOT+Constant.File.CLASS;
-		List<String> allClassFullFilenameList=FileUtil.findMatchFile(matchOption);
-		if(allClassFullFilenameList!=null){
-			classesRootPath=new File(classesRootPath).getAbsolutePath()+Constant.Symbol.SLASH_LEFT;
-			for(String classFullFilename:allClassFullFilenameList){
-				classFullFilename=new File(classFullFilename).getAbsolutePath();
-				ClassDescription classDescription=findClassDescription(classFullFilename);
-				classDescriptionMap.put(classFullFilename,classDescription);
-				if(referencedClassDescriptionListMap!=null){
-					Iterator<Entry<String,String>> iterator=classDescription.dependClassNameMap.entrySet().iterator();
-					while(iterator.hasNext()){
-						Entry<String,String> entry=iterator.next();
-						String dependClassName=entry.getValue();
-//						String dependClassFullFilename=new File(classesRootPath+dependClassName+Constant.Symbol.DOT+Constant.File.CLASS).getAbsolutePath();
-						dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
-						List<ClassDescription> classDescriptionList=null;
-						if(referencedClassDescriptionListMap.containsKey(dependClassName)){
-							classDescriptionList=referencedClassDescriptionListMap.get(dependClassName);
-						}else{
-							classDescriptionList=new ArrayList<ClassDescription>();
+	public static Map<String, ClassDescription> findClassDescriptionMap(String classesRootPath, Map<String, List<ClassDescription>> referencedClassDescriptionListMap) {
+		Map<String, ClassDescription> classDescriptionMap = new HashMap<String, ClassDescription>();
+		FileUtil.MatchOption matchOption = new FileUtil.MatchOption(classesRootPath);
+		matchOption.fileSuffix = Constant.Symbol.DOT + Constant.File.CLASS;
+		List<String> allClassFullFilenameList = FileUtil.findMatchFile(matchOption);
+		if (allClassFullFilenameList != null) {
+			classesRootPath = new File(classesRootPath).getAbsolutePath() + Constant.Symbol.SLASH_LEFT;
+			for (String classFullFilename : allClassFullFilenameList) {
+				classFullFilename = new File(classFullFilename).getAbsolutePath();
+				ClassDescription classDescription = findClassDescription(classFullFilename);
+				classDescriptionMap.put(classFullFilename, classDescription);
+				if (referencedClassDescriptionListMap != null) {
+					Iterator<Entry<String, String>> iterator = classDescription.dependClassNameMap.entrySet().iterator();
+					while (iterator.hasNext()) {
+						Entry<String, String> entry = iterator.next();
+						String dependClassName = entry.getValue();
+						// String dependClassFullFilename=new
+						// File(classesRootPath+dependClassName+Constant.Symbol.DOT+Constant.File.CLASS).getAbsolutePath();
+						dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+						List<ClassDescription> classDescriptionList = null;
+						if (referencedClassDescriptionListMap.containsKey(dependClassName)) {
+							classDescriptionList = referencedClassDescriptionListMap.get(dependClassName);
+						} else {
+							classDescriptionList = new ArrayList<ClassDescription>();
 							referencedClassDescriptionListMap.put(dependClassName, classDescriptionList);
 						}
 						classDescriptionList.add(classDescription);
@@ -380,30 +389,31 @@ public final class AsmUtil {
 
 	/**
 	 * find class description map
+	 * 
 	 * @param classNameByteArrayMap
 	 * @param referencedClassDescriptionListMap
 	 * @return Map<String,ClassDescription>
 	 */
-	public static Map<String,ClassDescription> findClassDescriptionMap(Map<String, byte[]> classNameByteArrayMap ,Map<String,List<ClassDescription>> referencedClassDescriptionListMap){
-		Map<String,ClassDescription> classDescriptionMap=new HashMap<String,ClassDescription>();
-		Iterator<Entry<String,byte[]>> classNameByteArrayEntryIterator=classNameByteArrayMap.entrySet().iterator();
-		while(classNameByteArrayEntryIterator.hasNext()){
-			Entry<String,byte[]> classNameByteArrayEntry=classNameByteArrayEntryIterator.next();
-			String className=classNameByteArrayEntry.getKey();
-			byte[] byteArray=classNameByteArrayEntry.getValue();
-			ClassDescription classDescription=findClassDescription(new ByteArrayInputStream(byteArray));
-			classDescriptionMap.put(className,classDescription);
-			if(referencedClassDescriptionListMap!=null){
-				Iterator<Entry<String,String>> iterator=classDescription.dependClassNameMap.entrySet().iterator();
-				while(iterator.hasNext()){
-					Entry<String,String> entry=iterator.next();
-					String dependClassName=entry.getValue();
-					dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
-					List<ClassDescription> classDescriptionList=null;
-					if(referencedClassDescriptionListMap.containsKey(dependClassName)){
-						classDescriptionList=referencedClassDescriptionListMap.get(dependClassName);
-					}else{
-						classDescriptionList=new ArrayList<ClassDescription>();
+	public static Map<String, ClassDescription> findClassDescriptionMap(Map<String, byte[]> classNameByteArrayMap, Map<String, List<ClassDescription>> referencedClassDescriptionListMap) {
+		Map<String, ClassDescription> classDescriptionMap = new HashMap<String, ClassDescription>();
+		Iterator<Entry<String, byte[]>> classNameByteArrayEntryIterator = classNameByteArrayMap.entrySet().iterator();
+		while (classNameByteArrayEntryIterator.hasNext()) {
+			Entry<String, byte[]> classNameByteArrayEntry = classNameByteArrayEntryIterator.next();
+			String className = classNameByteArrayEntry.getKey();
+			byte[] byteArray = classNameByteArrayEntry.getValue();
+			ClassDescription classDescription = findClassDescription(new ByteArrayInputStream(byteArray));
+			classDescriptionMap.put(className, classDescription);
+			if (referencedClassDescriptionListMap != null) {
+				Iterator<Entry<String, String>> iterator = classDescription.dependClassNameMap.entrySet().iterator();
+				while (iterator.hasNext()) {
+					Entry<String, String> entry = iterator.next();
+					String dependClassName = entry.getValue();
+					dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+					List<ClassDescription> classDescriptionList = null;
+					if (referencedClassDescriptionListMap.containsKey(dependClassName)) {
+						classDescriptionList = referencedClassDescriptionListMap.get(dependClassName);
+					} else {
+						classDescriptionList = new ArrayList<ClassDescription>();
 						referencedClassDescriptionListMap.put(dependClassName, classDescriptionList);
 					}
 					classDescriptionList.add(classDescription);
@@ -415,20 +425,21 @@ public final class AsmUtil {
 
 	/**
 	 * add depend class name
+	 * 
 	 * @param classDescription
 	 * @param internalName
 	 */
-	private static void addDependClassName(ClassDescription classDescription,String internalName){
-		String className=internalName;
-		if(StringUtil.isMatchRegex(internalName, CLASS_ARRAY_REGEX)){
-			List<String> groupList=StringUtil.parseRegexGroup(internalName, CLASS_ARRAY_REGEX);
-			if(groupList!=null&&!groupList.isEmpty()){
-				className=internalName.substring(groupList.get(0).length(),internalName.length()-1);
+	private static void addDependClassName(ClassDescription classDescription, String internalName) {
+		String className = internalName;
+		if (StringUtil.isMatchRegex(internalName, CLASS_ARRAY_REGEX)) {
+			List<String> groupList = StringUtil.parseRegexGroup(internalName, CLASS_ARRAY_REGEX);
+			if (groupList != null && !groupList.isEmpty()) {
+				className = internalName.substring(groupList.get(0).length(), internalName.length() - 1);
 			}
 		}
-		if(StringUtil.isMatchRegex(className, ANDROID_SUPPORT_REGEX)||!StringUtil.isMatchRegex(className, REGEX)){
-			if(!classDescription.dependClassNameMap.containsKey(className)){
-				classDescription.dependClassNameMap.put(className,className);
+		if (StringUtil.isMatchRegex(className, ANDROID_SUPPORT_REGEX) || !StringUtil.isMatchRegex(className, REGEX)) {
+			if (!classDescription.dependClassNameMap.containsKey(className)) {
+				classDescription.dependClassNameMap.put(className, className);
 				classDescription.dependClassNameList.add(className);
 			}
 		}
@@ -436,29 +447,30 @@ public final class AsmUtil {
 
 	/**
 	 * parse annotation in annotation node
+	 * 
 	 * @param rootAnnotationNode
 	 * @return List<String>
 	 */
-	private static List<String> parseAnnotationInAnnotationNode(AnnotationNode rootAnnotationNode){
-		Map<String,String> annotationMap=new HashMap<String,String>();
-		List<String> annotationList=new ArrayList<String>();
-		Queue<AnnotationNode> queue=new ConcurrentLinkedQueue<AnnotationNode>();
+	private static List<String> parseAnnotationInAnnotationNode(AnnotationNode rootAnnotationNode) {
+		Map<String, String> annotationMap = new HashMap<String, String>();
+		List<String> annotationList = new ArrayList<String>();
+		Queue<AnnotationNode> queue = new ConcurrentLinkedQueue<AnnotationNode>();
 		queue.add(rootAnnotationNode);
-		while(!queue.isEmpty()){
-			AnnotationNode annotationNode=queue.poll();
-			String describe=annotationNode.desc;
-			String internalName=Type.getType(describe).getInternalName();
-			if(!annotationMap.containsKey(internalName)){
+		while (!queue.isEmpty()) {
+			AnnotationNode annotationNode = queue.poll();
+			String describe = annotationNode.desc;
+			String internalName = Type.getType(describe).getInternalName();
+			if (!annotationMap.containsKey(internalName)) {
 				annotationMap.put(internalName, internalName);
 				annotationList.add(internalName);
-				if(annotationNode.values!=null){
-					for(Object object:annotationNode.values){
-						if(object instanceof AnnotationNode){
-							queue.add((AnnotationNode)object);
-						}else if(object instanceof List){
-							for(Object subObject:(List<?>)object){
-								if(subObject instanceof AnnotationNode){
-									queue.add((AnnotationNode)subObject);
+				if (annotationNode.values != null) {
+					for (Object object : annotationNode.values) {
+						if (object instanceof AnnotationNode) {
+							queue.add((AnnotationNode) object);
+						} else if (object instanceof List) {
+							for (Object subObject : (List<?>) object) {
+								if (subObject instanceof AnnotationNode) {
+									queue.add((AnnotationNode) subObject);
 								}
 							}
 						}
@@ -471,68 +483,70 @@ public final class AsmUtil {
 
 	/**
 	 * is need to put into the same class loader
+	 * 
 	 * @param classDescription
-	 * @param referencedClassDescription,which class reference classDescription
+	 * @param referencedClassDescription,which
+	 *            class reference classDescription
 	 * @return boolean
 	 */
-	public static boolean isNeedToPutIntoTheSameClassLoader(ClassDescription classDescription,ClassDescription referencedClassDescription){
-		boolean result=false;
-		if(classDescription!=null&&referencedClassDescription!=null){
-			//not public class chain
-			if(!classDescription.isPublicClass()&&!referencedClassDescription.isPublicClass()){
-				result=true;
+	public static boolean isNeedToPutIntoTheSameClassLoader(ClassDescription classDescription, ClassDescription referencedClassDescription) {
+		boolean result = false;
+		if (classDescription != null && referencedClassDescription != null) {
+			// not public class chain
+			if (!classDescription.isPublicClass() && !referencedClassDescription.isPublicClass()) {
+				result = true;
 				return result;
 			}
-			//has private field
-			if(!classDescription.isNoPrivateField()){
-				for(String privateFieldName:classDescription.privateFieldNameList){
-					if(referencedClassDescription.referenceFieldNameMap.containsKey(privateFieldName)){
-						result=true;
+			// has private field
+			if (!classDescription.isNoPrivateField()) {
+				for (String privateFieldName : classDescription.privateFieldNameList) {
+					if (referencedClassDescription.referenceFieldNameMap.containsKey(privateFieldName)) {
+						result = true;
 						return result;
 					}
 				}
 			}
-			//has private method
-			if(!classDescription.isNoPrivateMethod()){
-				for(String privateMethodName:classDescription.privateMethodNameList){
-					if(referencedClassDescription.referenceMethodNameMap.containsKey(privateMethodName)){
-						result=true;
+			// has private method
+			if (!classDescription.isNoPrivateMethod()) {
+				for (String privateMethodName : classDescription.privateMethodNameList) {
+					if (referencedClassDescription.referenceMethodNameMap.containsKey(privateMethodName)) {
+						result = true;
 						return result;
 					}
 				}
 			}
-			//has friendly field
-			if(!classDescription.isNoFriendlyField()){
-				for(String friendlyFieldName:classDescription.friendlyFieldNameList){
-					if(referencedClassDescription.referenceFieldNameMap.containsKey(friendlyFieldName)){
-						result=true;
+			// has friendly field
+			if (!classDescription.isNoFriendlyField()) {
+				for (String friendlyFieldName : classDescription.friendlyFieldNameList) {
+					if (referencedClassDescription.referenceFieldNameMap.containsKey(friendlyFieldName)) {
+						result = true;
 						return result;
 					}
 				}
 			}
-			//has friendly method
-			if(!classDescription.isNoFriendlyMethod()){
-				for(String friendlyMethodName:classDescription.friendlyMethodNameList){
-					if(referencedClassDescription.referenceMethodNameMap.containsKey(friendlyMethodName)){
-						result=true;
+			// has friendly method
+			if (!classDescription.isNoFriendlyMethod()) {
+				for (String friendlyMethodName : classDescription.friendlyMethodNameList) {
+					if (referencedClassDescription.referenceMethodNameMap.containsKey(friendlyMethodName)) {
+						result = true;
 						return result;
 					}
 				}
 			}
-			//has protected field
-			if(!classDescription.isNoProtectedField()){
-				for(String protectedFieldName:classDescription.protectedFieldNameList){
-					if(referencedClassDescription.referenceFieldNameMap.containsKey(protectedFieldName)){
-						result=true;
+			// has protected field
+			if (!classDescription.isNoProtectedField()) {
+				for (String protectedFieldName : classDescription.protectedFieldNameList) {
+					if (referencedClassDescription.referenceFieldNameMap.containsKey(protectedFieldName)) {
+						result = true;
 						return result;
 					}
 				}
 			}
-			//has protected method
-			if(!classDescription.isNoProtectedMethod()){
-				for(String protectedMethodName:classDescription.protectedMethodNameList){
-					if(referencedClassDescription.referenceMethodNameMap.containsKey(protectedMethodName)){
-						result=true;
+			// has protected method
+			if (!classDescription.isNoProtectedMethod()) {
+				for (String protectedMethodName : classDescription.protectedMethodNameList) {
+					if (referencedClassDescription.referenceMethodNameMap.containsKey(protectedMethodName)) {
+						result = true;
 						return result;
 					}
 				}
@@ -543,17 +557,18 @@ public final class AsmUtil {
 
 	/**
 	 * find all depend class name map
+	 * 
 	 * @param classesJar
 	 * @param rootClassNameSet
 	 * @param deep
 	 * @return Map<String,String>
 	 */
-	public static Map<String,String> findAllDependClassNameMap(String classesJar,Set<String> rootClassNameSet,boolean deep){
-		Map<String,List<ClassDescription>> referencedClassDescriptionListMap=new HashMap<String,List<ClassDescription>>();
-		Map<String,ClassDescription> classDescriptionMap=findClassDescriptionMapWithJar(classesJar,referencedClassDescriptionListMap);
-		Map<String,String> allClassNameMap=new HashMap<String,String>();
-		Set<String> classNameKeySet=classDescriptionMap.keySet();
-		for(String className:classNameKeySet){
+	public static Map<String, String> findAllDependClassNameMap(String classesJar, Set<String> rootClassNameSet, boolean deep) {
+		Map<String, List<ClassDescription>> referencedClassDescriptionListMap = new HashMap<String, List<ClassDescription>>();
+		Map<String, ClassDescription> classDescriptionMap = findClassDescriptionMapWithJar(classesJar, referencedClassDescriptionListMap);
+		Map<String, String> allClassNameMap = new HashMap<String, String>();
+		Set<String> classNameKeySet = classDescriptionMap.keySet();
+		for (String className : classNameKeySet) {
 			allClassNameMap.put(className, className);
 		}
 		return findAllDependClassNameMap(rootClassNameSet, classDescriptionMap, referencedClassDescriptionListMap, allClassNameMap, deep);
@@ -561,6 +576,7 @@ public final class AsmUtil {
 
 	/**
 	 * find all depend class name map
+	 * 
 	 * @param rootClassNameSet
 	 * @param classDescriptionMap
 	 * @param referencedClassDescriptionListMap
@@ -568,67 +584,77 @@ public final class AsmUtil {
 	 * @param deep
 	 * @return Map<String,String>
 	 */
-	public static Map<String,String> findAllDependClassNameMap(Set<String> rootClassNameSet,Map<String,ClassDescription> classDescriptionMap,Map<String,List<ClassDescription>> referencedClassDescriptionListMap,Map<String,String> allClassNameMap,boolean deep){
-		Map<String,String> dependClassNameMap=new HashMap<String,String>();
-		Queue<String> queue=new ConcurrentLinkedQueue<String>();
+	public static Map<String, String> findAllDependClassNameMap(Set<String> rootClassNameSet, Map<String, ClassDescription> classDescriptionMap, Map<String, List<ClassDescription>> referencedClassDescriptionListMap, Map<String, String> allClassNameMap, boolean deep) {
+		Map<String, String> dependClassNameMap = new HashMap<String, String>();
+		Queue<String> queue = new ConcurrentLinkedQueue<String>();
 		queue.addAll(rootClassNameSet);
-		int count=0;
-		final int maxCount=500;
-		while(!queue.isEmpty()){
-			String className=queue.poll();
-			ClassDescription classDescription=classDescriptionMap.get(className);
-			if(classDescription!=null){
-				logger.verbose(className+","+classDescription.access+","+Modifier.isPublic(classDescription.access));
-				if(!dependClassNameMap.containsKey(className)){
+		int count = 0;
+		final int maxCount = 500;
+		while (!queue.isEmpty()) {
+			String className = queue.poll();
+			ClassDescription classDescription = classDescriptionMap.get(className);
+			if (classDescription != null) {
+				logger.verbose(className + "," + classDescription.access + "," + Modifier.isPublic(classDescription.access));
+				if (!dependClassNameMap.containsKey(className)) {
 					dependClassNameMap.put(className, className);
 				}
-				for(String dependClassName:classDescription.dependClassNameMap.keySet()){
-					dependClassName=dependClassName+Constant.Symbol.DOT+Constant.File.CLASS;
-					logger.verbose("\tdepend:"+dependClassName);
-					if(!dependClassNameMap.containsKey(dependClassName)){
-						if(allClassNameMap.containsKey(dependClassName)){//has found
+				for (String dependClassName : classDescription.dependClassNameMap.keySet()) {
+					dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+					logger.verbose("\tdepend:" + dependClassName);
+					if (!dependClassNameMap.containsKey(dependClassName)) {
+						if (allClassNameMap.containsKey(dependClassName)) {// has
+																			// found
 							dependClassNameMap.put(dependClassName, dependClassName);
-							if(deep){
+							if (deep) {
 								queue.add(dependClassName);
-							}else if(count<maxCount){
+							} else if (count < maxCount) {
 								queue.add(dependClassName);
 							}
-							//set public chain
-//							if(classDescriptionMap.containsKey(dependClassName)){
-//								ClassDescription dependClassDescription=classDescriptionMap.get(dependClassName);
-//								if(!dependClassDescription.isPublicClass()&&classDescription.isPublicClassChain()){
-//									classDescription.setPublicClassChain(false);
-//								}
-//							}
+							// set public chain
+							// if(classDescriptionMap.containsKey(dependClassName)){
+							// ClassDescription
+							// dependClassDescription=classDescriptionMap.get(dependClassName);
+							// if(!dependClassDescription.isPublicClass()&&classDescription.isPublicClassChain()){
+							// classDescription.setPublicClassChain(false);
+							// }
+							// }
 						}
 					}
 				}
-				//find sub class or referenced class
-				if(classDescription!=null&&(!classDescription.isNoPrivateField()||!classDescription.isNoFriendlyField()||!classDescription.isNoProtectedField()||!classDescription.isNoPrivateMethod()||!classDescription.isNoFriendlyMethod()||!classDescription.isNoProtectedMethod())){
-//				if(classDescription!=null&&(!classDescription.isPublicClassChain()||!classDescription.isNoPrivateField()||!classDescription.isNoFriendlyField()||!classDescription.isNoProtectedField()||!classDescription.isNoPrivateMethod()||!classDescription.isNoFriendlyMethod()||!classDescription.isNoProtectedMethod())){
-					List<ClassDescription> referencedClassDescriptionList=referencedClassDescriptionListMap.get(className);
-					if(referencedClassDescriptionList!=null){
-						for(ClassDescription referencedClassDescription:referencedClassDescriptionList){
-							String referencedClassName=referencedClassDescription.className+Constant.Symbol.DOT+Constant.File.CLASS;
-							if(referencedClassDescription.dependClassNameMap.containsKey(classDescription.className)){
-								//1.sub class(no friendly field and method or have),2.same package(independence or depend)
-								//only focus the same package,no matter the same package or not the same package
-								if(!dependClassNameMap.containsKey(referencedClassName)){
-									//if depend class in the same package then it may use it friendly method or protected method or inner class(use private method),others in not same package must use the use public or protected method,keyword 'extends'
-									String superClassPackage=className.substring(0,className.lastIndexOf(Constant.Symbol.SLASH_LEFT));
-									String referencedClassPackage=referencedClassName.substring(0,referencedClassName.lastIndexOf(Constant.Symbol.SLASH_LEFT));
-									if(superClassPackage.equals(referencedClassPackage)){//same package
-//										if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
-//											referencedClassDescription.setPublicClassChain(false);
-//										}
-										boolean result=isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
-										if(result){
-											if(!dependClassNameMap.containsKey(referencedClassName)){
-												if(allClassNameMap.containsKey(referencedClassName)){
+				// find sub class or referenced class
+				if (classDescription != null && (!classDescription.isNoPrivateField() || !classDescription.isNoFriendlyField() || !classDescription.isNoProtectedField() || !classDescription.isNoPrivateMethod() || !classDescription.isNoFriendlyMethod() || !classDescription.isNoProtectedMethod())) {
+					// if(classDescription!=null&&(!classDescription.isPublicClassChain()||!classDescription.isNoPrivateField()||!classDescription.isNoFriendlyField()||!classDescription.isNoProtectedField()||!classDescription.isNoPrivateMethod()||!classDescription.isNoFriendlyMethod()||!classDescription.isNoProtectedMethod())){
+					List<ClassDescription> referencedClassDescriptionList = referencedClassDescriptionListMap.get(className);
+					if (referencedClassDescriptionList != null) {
+						for (ClassDescription referencedClassDescription : referencedClassDescriptionList) {
+							String referencedClassName = referencedClassDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
+							if (referencedClassDescription.dependClassNameMap.containsKey(classDescription.className)) {
+								// 1.sub class(no friendly field and method or
+								// have),2.same package(independence or depend)
+								// only focus the same package,no matter the
+								// same package or not the same package
+								if (!dependClassNameMap.containsKey(referencedClassName)) {
+									// if depend class in the same package then
+									// it may use it friendly method or
+									// protected method or inner class(use
+									// private method),others in not same
+									// package must use the use public or
+									// protected method,keyword 'extends'
+									String superClassPackage = className.substring(0, className.lastIndexOf(Constant.Symbol.SLASH_LEFT));
+									String referencedClassPackage = referencedClassName.substring(0, referencedClassName.lastIndexOf(Constant.Symbol.SLASH_LEFT));
+									if (superClassPackage.equals(referencedClassPackage)) {// same
+																							// package
+										// if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
+										// referencedClassDescription.setPublicClassChain(false);
+										// }
+										boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
+										if (result) {
+											if (!dependClassNameMap.containsKey(referencedClassName)) {
+												if (allClassNameMap.containsKey(referencedClassName)) {
 													dependClassNameMap.put(referencedClassName, referencedClassName);
-													if(deep){
+													if (deep) {
 														queue.add(referencedClassName);
-													}else if(count<maxCount){
+													} else if (count < maxCount) {
 														queue.add(referencedClassName);
 													}
 												}
@@ -640,8 +666,8 @@ public final class AsmUtil {
 						}
 					}
 				}
-			}else{
-				logger.verbose("\tclass is not exist:"+className);
+			} else {
+				logger.verbose("\tclass is not exist:" + className);
 			}
 			count++;
 		}
@@ -651,8 +677,9 @@ public final class AsmUtil {
 	/**
 	 * AsmUtilException
 	 */
-	public static final class AsmUtilException extends RuntimeException{
+	public static final class AsmUtilException extends RuntimeException {
 		private static final long serialVersionUID = 73059698225184574L;
+
 		public AsmUtilException(Throwable cause) {
 			super(cause);
 		}
@@ -661,12 +688,13 @@ public final class AsmUtil {
 	/**
 	 * FieldProcessor
 	 */
-	public static abstract interface FieldProcessor{
+	public static abstract interface FieldProcessor {
 		/**
 		 * process
+		 * 
 		 * @param referenceFieldNameWithoutType
 		 * @param classDescription
 		 */
-		public abstract void process(String referenceFieldNameWithoutType,ClassDescription classDescription);
+		public abstract void process(String referenceFieldNameWithoutType, ClassDescription classDescription);
 	}
 }
