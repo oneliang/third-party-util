@@ -17,10 +17,12 @@ public class ClassDescription {
 	public Map<String, String> referenceFieldNameMap = new HashMap<String, String>();
 	public Map<String, String> referenceMethodNameMap = new HashMap<String, String>();
 	public List<String> fieldNameList = new ArrayList<String>();
+	public List<String> fieldFullNameList = new ArrayList<String>();
 	public List<String> privateFieldNameList = new ArrayList<String>();
 	public List<String> friendlyFieldNameList = new ArrayList<String>();
 	public List<String> protectedFieldNameList = new ArrayList<String>();
 	public List<String> methodNameList = new ArrayList<String>();
+	public List<String> methodFullNameList = new ArrayList<String>();
 	public List<String> privateMethodNameList = new ArrayList<String>();
 	public List<String> friendlyMethodNameList = new ArrayList<String>();
 	public List<String> protectedMethodNameList = new ArrayList<String>();

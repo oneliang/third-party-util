@@ -188,6 +188,7 @@ public final class AsmUtil {
 			for (FieldNode fieldNode : fieldNodeList) {
 				String fieldName = className + Constant.Symbol.DOT + fieldNode.name + Constant.Symbol.DOT + fieldNode.desc;
 				classDescription.fieldNameList.add(fieldName);
+				classDescription.fieldFullNameList.add(fieldName + Constant.Symbol.DOT + fieldNode.access);
 				// save field desc
 				if (!Modifier.isPublic(fieldNode.access)) {
 					if (Modifier.isPrivate(fieldNode.access)) {
@@ -213,6 +214,7 @@ public final class AsmUtil {
 			for (MethodNode methodNode : methodNodeList) {
 				String methodName = className + Constant.Symbol.DOT + methodNode.name + Constant.Symbol.DOT + methodNode.desc;
 				classDescription.methodNameList.add(methodName);
+				classDescription.methodFullNameList.add(methodName + Constant.Symbol.DOT + methodNode.access);
 				// save method desc
 				if (!Modifier.isPublic(methodNode.access) && !methodNode.name.equals("<clinit>")) {
 					if (Modifier.isPrivate(methodNode.access)) {
