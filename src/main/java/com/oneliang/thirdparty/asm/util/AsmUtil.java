@@ -145,6 +145,13 @@ public final class AsmUtil {
 		classDescription.superClassName = superClassName;
 		addDependClassName(classDescription, superClassName);
 
+		if(classNode.interfaces!=null){
+			for(String string:classNode.interfaces){
+				classDescription.interfaceList.add(string);
+				addDependClassName(classDescription, string);				
+			}
+		}
+
 		// class constant pool
 		Iterator<Entry<org.objectweb.asm.optimizer.Constant, org.objectweb.asm.optimizer.Constant>> iterator = constantPool.entrySet().iterator();
 		while (iterator.hasNext()) {

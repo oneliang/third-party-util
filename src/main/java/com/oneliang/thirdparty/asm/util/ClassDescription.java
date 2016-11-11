@@ -12,6 +12,7 @@ public class ClassDescription {
 	public int access = 0;
 	public String sourceFile = null;
 	private boolean publicClass = false;
+	public List<String> interfaceList=new ArrayList<String>();
 	public List<String> dependClassNameList = new ArrayList<String>();
 	public Map<String, String> dependClassNameMap = new HashMap<String, String>();
 	public Map<String, String> referenceFieldNameMap = new HashMap<String, String>();
