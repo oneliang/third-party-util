@@ -145,10 +145,10 @@ public final class AsmUtil {
 		classDescription.superClassName = superClassName;
 		addDependClassName(classDescription, superClassName);
 
-		if(classNode.interfaces!=null){
-			for(String string:classNode.interfaces){
+		if (classNode.interfaces != null) {
+			for (String string : classNode.interfaces) {
 				classDescription.interfaceList.add(string);
-				addDependClassName(classDescription, string);				
+				addDependClassName(classDescription, string);
 			}
 		}
 
@@ -448,10 +448,42 @@ public final class AsmUtil {
 		}
 		if (StringUtil.isMatchRegex(className, ANDROID_SUPPORT_REGEX) || !StringUtil.isMatchRegex(className, REGEX)) {
 			if (!classDescription.dependClassNameMap.containsKey(className)) {
+
+				if (Modifier.isInterface(classDescription.access) && Modifier.isPublic(classDescription.access)) {
+					if (isInnerInterface(classDescription.className, className)) {
+						return;
+					}
+				}
+
 				classDescription.dependClassNameMap.put(className, className);
 				classDescription.dependClassNameList.add(className);
 			}
 		}
+	}
+
+	/**
+	 * is inner interface
+	 * 
+	 * @param interfaceName
+	 * @param className
+	 * @return boolean
+	 */
+	private static boolean isInnerInterface(String interfaceName, String className) {
+		if (StringUtil.isBlank(interfaceName) || StringUtil.isBlank(className)) {
+			return false;
+		}
+		if (interfaceName.length() <= className.length()) {
+			return false;
+		}
+		String interfacePrefixName = interfaceName.substring(0, className.length());
+		if (!interfacePrefixName.equals(className)) {
+			return false;
+		}
+		String interfaceSuffixName = interfaceName.substring(className.length(), interfaceName.length());
+		if (interfaceSuffixName.startsWith(Constant.Symbol.DOLLAR)) {
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -603,7 +635,8 @@ public final class AsmUtil {
 			String className = queue.poll();
 			ClassDescription classDescription = classDescriptionMap.get(className);
 			if (classDescription != null) {
-				logger.verbose(className + "," + classDescription.access + "," + Modifier.isPublic(classDescription.access));
+				logger.verbose(className + "," + classDescription.access + "," + Modifier.isPublic(classDescription.access) + "," + (!classDescription.isNoPrivateField()) + "," + (!classDescription.isNoFriendlyField()) + "," + (!classDescription.isNoProtectedField()) + "," + (!classDescription.isNoPrivateMethod()) + "," + (!classDescription.isNoFriendlyMethod()) + ","
+						+ (!classDescription.isNoProtectedMethod()));
 				if (!dependClassNameMap.containsKey(className)) {
 					dependClassNameMap.put(className, className);
 				}
