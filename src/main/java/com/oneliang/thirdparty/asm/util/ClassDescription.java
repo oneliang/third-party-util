@@ -27,6 +27,7 @@ public class ClassDescription {
 	public List<String> privateMethodNameList = new ArrayList<String>();
 	public List<String> friendlyMethodNameList = new ArrayList<String>();
 	public List<String> protectedMethodNameList = new ArrayList<String>();
+	private boolean annotationClass = false;
 
 	void setPublicClass(boolean publicClass) {
 		this.publicClass = publicClass;
@@ -59,4 +60,18 @@ public class ClassDescription {
 	public boolean isNoProtectedMethod() {
 		return this.protectedMethodNameList.isEmpty();
 	}
+
+    /**
+     * @return the annotationClass
+     */
+    public boolean isAnnotationClass() {
+        return annotationClass;
+    }
+
+    /**
+     * @param annotationClass the annotationClass to set
+     */
+    void setAnnotationClass(boolean annotationClass) {
+        this.annotationClass = annotationClass;
+    }
 }

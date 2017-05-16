@@ -45,6 +45,7 @@ public final class AsmUtil {
     private static final String ANDROID_SUPPORT_REGEX = "^android/support/[a-zA-Z0-9_/\\$]*$";
     private static final String BASIC_CLASS_REGEX = "^\\[*[ZCBSIFDJV]$";
     private static final String CLASS_ARRAY_REGEX = "^(\\[*L)";
+    public static final int MODIFIER_ANNOTATION = 0x00002000;
 
     /**
      * trace class
@@ -139,6 +140,9 @@ public final class AsmUtil {
         classDescription.access = classNode.access;
         if (Modifier.isPublic(classDescription.access)) {
             classDescription.setPublicClass(true);
+        }
+        if ((classDescription.access & MODIFIER_ANNOTATION) == MODIFIER_ANNOTATION) {
+            classDescription.setAnnotationClass(true);
         }
         addDependClassName(classDescription, className);
 
@@ -651,25 +655,27 @@ public final class AsmUtil {
                 for (String dependClassName : classDescription.dependClassNameMap.keySet()) {
                     dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
                     logger.verbose("\tdepend:" + dependClassName);
-                    if (!dependClassNameMap.containsKey(dependClassName)) {
-                        if (allClassNameMap.containsKey(dependClassName)) {// has
-                                                                           // found
-                            dependClassNameMap.put(dependClassName, dependClassName);
-                            if (deep) {
-                                queue.add(dependClassName);
-                            } else if (count < maxCount) {
-                                queue.add(dependClassName);
-                            }
-                            // set public chain
-                            // if(classDescriptionMap.containsKey(dependClassName)){
-                            // ClassDescription
-                            // dependClassDescription=classDescriptionMap.get(dependClassName);
-                            // if(!dependClassDescription.isPublicClass()&&classDescription.isPublicClassChain()){
-                            // classDescription.setPublicClassChain(false);
-                            // }
-                            // }
-                        }
+                    if (dependClassNameMap.containsKey(dependClassName)) {
+                        continue;
                     }
+                    if (!allClassNameMap.containsKey(dependClassName)) {
+                        continue;
+                    }
+                    // has found
+                    dependClassNameMap.put(dependClassName, dependClassName);
+                    if (deep) {
+                        queue.add(dependClassName);
+                    } else if (count < maxCount) {
+                        queue.add(dependClassName);
+                    }
+                    // set public chain
+                    // if(classDescriptionMap.containsKey(dependClassName)){
+                    // ClassDescription
+                    // dependClassDescription=classDescriptionMap.get(dependClassName);
+                    // if(!dependClassDescription.isPublicClass()&&classDescription.isPublicClassChain()){
+                    // classDescription.setPublicClassChain(false);
+                    // }
+                    // }
                 }
                 // find sub class or referenced class
                 if (classDescription != null && (!classDescription.isNoPrivateField() || !classDescription.isNoFriendlyField() || !classDescription.isNoProtectedField() || !classDescription.isNoPrivateMethod() || !classDescription.isNoFriendlyMethod() || !classDescription.isNoProtectedMethod())) {
@@ -678,40 +684,46 @@ public final class AsmUtil {
                     if (referencedClassDescriptionList != null) {
                         for (ClassDescription referencedClassDescription : referencedClassDescriptionList) {
                             String referencedClassName = referencedClassDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
-                            if (referencedClassDescription.dependClassNameMap.containsKey(classDescription.className)) {
-                                // 1.sub class(no friendly field and method or
-                                // have),2.same package(independence or depend)
-                                // only focus the same package,no matter the
-                                // same package or not the same package
-                                if (!dependClassNameMap.containsKey(referencedClassName)) {
-                                    // if depend class in the same package then
-                                    // it may use it friendly method or
-                                    // protected method or inner class(use
-                                    // private method),others in not same
-                                    // package must use the use public or
-                                    // protected method,keyword 'extends'
-                                    String superClassPackage = className.substring(0, className.lastIndexOf(Constant.Symbol.SLASH_LEFT));
-                                    String referencedClassPackage = referencedClassName.substring(0, referencedClassName.lastIndexOf(Constant.Symbol.SLASH_LEFT));
-                                    if (superClassPackage.equals(referencedClassPackage)) {// same
-                                                                                           // package
-                                        // if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
-                                        // referencedClassDescription.setPublicClassChain(false);
-                                        // }
-                                        boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
-                                        if (result) {
-                                            if (!dependClassNameMap.containsKey(referencedClassName)) {
-                                                if (allClassNameMap.containsKey(referencedClassName)) {
-                                                    dependClassNameMap.put(referencedClassName, referencedClassName);
-                                                    if (deep) {
-                                                        queue.add(referencedClassName);
-                                                    } else if (count < maxCount) {
-                                                        queue.add(referencedClassName);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                            if (!referencedClassDescription.dependClassNameMap.containsKey(classDescription.className)) {
+                                continue;
+                            }
+                            // 1.sub class(no friendly field and method or
+                            // have),2.same package(independence or depend)
+                            // only focus the same package,no matter the
+                            // same package or not the same package
+                            if (dependClassNameMap.containsKey(referencedClassName)) {
+                                continue;
+                            }
+                            // if depend class in the same package then
+                            // it may use it friendly method or
+                            // protected method or inner class(use
+                            // private method),others in not same
+                            // package must use the use public or
+                            // protected method,keyword 'extends'
+                            String superClassPackage = className.substring(0, className.lastIndexOf(Constant.Symbol.SLASH_LEFT));
+                            String referencedClassPackage = referencedClassName.substring(0, referencedClassName.lastIndexOf(Constant.Symbol.SLASH_LEFT));
+                            if (!superClassPackage.equals(referencedClassPackage)) {
+                                continue;
+                            }
+                            // same package
+                            // if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
+                            // referencedClassDescription.setPublicClassChain(false);
+                            // }
+                            boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
+                            if (!result) {
+                                continue;
+                            }
+                            if (dependClassNameMap.containsKey(referencedClassName)) {
+                                continue;
+                            }
+                            if (!allClassNameMap.containsKey(referencedClassName)) {
+                                continue;
+                            }
+                            dependClassNameMap.put(referencedClassName, referencedClassName);
+                            if (deep) {
+                                queue.add(referencedClassName);
+                            } else if (count < maxCount) {
+                                queue.add(referencedClassName);
                             }
                         }
                     }
