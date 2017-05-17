@@ -573,11 +573,12 @@ public final class AsmUtil {
             // not public class chain//&&
             // !referencedClassDescription.isPublicClass()
             // class has referenced class,no matter public or not need to put in
-            // same class loader
+            // same class loader include annotation,annotation class has no
+            // field or all method are public,if use
+            // !classDescription.isPublicClass() &&
+            // !referencedClassDescription.isPublicClass() will has a bug,a
+            // public class may use a same package annotation(default modifier)
             if (!classDescription.isPublicClass()) {
-                if (referencedClassDescription.isPublicClass()) {
-                    logger.info("public depend non public.bug before.class name:" + className);
-                }
                 result = true;
                 return result;
             }
