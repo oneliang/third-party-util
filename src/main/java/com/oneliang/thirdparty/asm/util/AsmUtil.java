@@ -783,9 +783,6 @@ public final class AsmUtil {
                     // if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
                     // referencedClassDescription.setPublicClassChain(false);
                     // }
-                    if (referencedClassName.equals("com/tencent/mm/ui/TestVideoUI.class")) {
-                        System.out.println("break point.");
-                    }
                     boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription, classDescriptionMap);
                     logger.verbose("\tNeed to put into the same class loader:" + result + ",class:" + className + ",referenced class:" + referencedClassName);
                     if (!result) {
