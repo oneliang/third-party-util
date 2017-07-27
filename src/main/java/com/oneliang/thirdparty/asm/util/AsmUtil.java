@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -540,9 +541,10 @@ public final class AsmUtil {
      * @param classDescription
      * @param referencedClassDescription,which
      *            class reference classDescription
+     * @param classDescriptionMap
      * @return boolean
      */
-    public static boolean isNeedToPutIntoTheSameClassLoader(ClassDescription classDescription, ClassDescription referencedClassDescription) {
+    public static boolean isNeedToPutIntoTheSameClassLoader(ClassDescription classDescription, ClassDescription referencedClassDescription, Map<String, ClassDescription> classDescriptionMap) {
         boolean result = false;
         if (classDescription != null && referencedClassDescription != null) {
             String className = classDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
@@ -618,6 +620,15 @@ public final class AsmUtil {
                     }
                 }
             }
+            // same package,but no friendly reference, will do this
+            // sentence,sub class can invoke protected fields and methods of
+            // super class,no need to put into the same class loader
+            if (isSuperClass(classDescription, referencedClassDescription, classDescriptionMap)) {
+                result = false;
+                return result;
+            }
+            // same package,not inherit,must check protected fields and methods
+            // reference
             // has protected field
             if (!classDescription.isNoProtectedField()) {
                 for (String protectedFieldName : classDescription.protectedFieldNameList) {
@@ -638,6 +649,37 @@ public final class AsmUtil {
             }
         }
         return result;
+    }
+
+    /**
+     * is super class, just class is it the super class of referenced class
+     * 
+     * @param classDescription
+     * @param referencedClassDescription
+     * @param classDescriptionMap
+     * @return boolean
+     */
+    public static boolean isSuperClass(ClassDescription classDescription, ClassDescription referencedClassDescription, Map<String, ClassDescription> classDescriptionMap) {
+        String className = classDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
+        if (StringUtil.isBlank(referencedClassDescription.superClassName)) {
+            return false;
+        }
+        Set<String> superClassNameSet = new HashSet<String>();
+        String referencedSuperClassName = referencedClassDescription.superClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+        while (referencedSuperClassName != null) {
+            if (classDescriptionMap.containsKey(referencedSuperClassName)) {
+                ClassDescription referencedSuperClassDescription = classDescriptionMap.get(referencedSuperClassName);
+                superClassNameSet.add(referencedSuperClassName);
+                if (StringUtil.isBlank(referencedSuperClassDescription.superClassName)) {
+                    break;
+                }
+                referencedSuperClassName = referencedSuperClassDescription.superClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+            } else {// may be library class,class description must be program
+                    // class,and library class must be not depend program class
+                break;
+            }
+        }
+        return superClassNameSet.contains(className);
     }
 
     /**
@@ -741,7 +783,10 @@ public final class AsmUtil {
                     // if(!classDescription.isPublicClassChain()&&referencedClassDescription.isPublicClassChain()){
                     // referencedClassDescription.setPublicClassChain(false);
                     // }
-                    boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
+                    if (referencedClassName.equals("com/tencent/mm/ui/TestVideoUI.class")) {
+                        System.out.println("break point.");
+                    }
+                    boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription, classDescriptionMap);
                     logger.verbose("\tNeed to put into the same class loader:" + result + ",class:" + className + ",referenced class:" + referencedClassName);
                     if (!result) {
                         continue;
