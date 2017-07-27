@@ -742,6 +742,7 @@ public final class AsmUtil {
                     // referencedClassDescription.setPublicClassChain(false);
                     // }
                     boolean result = isNeedToPutIntoTheSameClassLoader(classDescription, referencedClassDescription);
+                    logger.verbose("\tclass:" + className + ",referenced class:" + referencedClassName + ",need to put into the same:" + result);
                     if (!result) {
                         continue;
                     }
