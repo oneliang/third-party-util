@@ -581,6 +581,7 @@ public final class AsmUtil {
             // !referencedClassDescription.isPublicClass() will has a bug,a
             // public class may use a same package annotation(default modifier)
             if (!classDescription.isPublicClass()) {
+                logger.verbose("\tIt is not public class:" + className);
                 result = true;
                 return result;
             }
@@ -588,6 +589,7 @@ public final class AsmUtil {
             if (!classDescription.isNoPrivateField()) {
                 for (String privateFieldName : classDescription.privateFieldNameList) {
                     if (referencedClassDescription.referenceFieldNameMap.containsKey(privateFieldName)) {
+                        logger.verbose("\tReferenced class:" + referencedClassName + ", has use private field:" + privateFieldName);
                         result = true;
                         return result;
                     }
@@ -597,6 +599,7 @@ public final class AsmUtil {
             if (!classDescription.isNoPrivateMethod()) {
                 for (String privateMethodName : classDescription.privateMethodNameList) {
                     if (referencedClassDescription.referenceMethodNameMap.containsKey(privateMethodName)) {
+                        logger.verbose("\tReferenced class:" + referencedClassName + ", has use private method:" + privateMethodName);
                         result = true;
                         return result;
                     }
@@ -606,6 +609,7 @@ public final class AsmUtil {
             if (!classDescription.isNoFriendlyField()) {
                 for (String friendlyFieldName : classDescription.friendlyFieldNameList) {
                     if (referencedClassDescription.referenceFieldNameMap.containsKey(friendlyFieldName)) {
+                        logger.verbose("\tReferenced class:" + referencedClassName + ", has use friendly field:" + friendlyFieldName);
                         result = true;
                         return result;
                     }
@@ -615,6 +619,7 @@ public final class AsmUtil {
             if (!classDescription.isNoFriendlyMethod()) {
                 for (String friendlyMethodName : classDescription.friendlyMethodNameList) {
                     if (referencedClassDescription.referenceMethodNameMap.containsKey(friendlyMethodName)) {
+                        logger.verbose("\tReferenced class:" + referencedClassName + ", has use friendly method:" + friendlyMethodName);
                         result = true;
                         return result;
                     }
@@ -624,6 +629,7 @@ public final class AsmUtil {
             // sentence,sub class can invoke protected fields and methods of
             // super class,no need to put into the same class loader
             if (isSuperClass(classDescription, referencedClassDescription, classDescriptionMap)) {
+                logger.verbose("\tReferenced class:" + referencedClassName + ", is the sub class of " + className);
                 result = false;
                 return result;
             }
@@ -633,6 +639,7 @@ public final class AsmUtil {
             if (!classDescription.isNoProtectedField()) {
                 for (String protectedFieldName : classDescription.protectedFieldNameList) {
                     if (referencedClassDescription.referenceFieldNameMap.containsKey(protectedFieldName)) {
+                        logger.verbose("\tReferenced class:" + referencedClassName + ", has use protected field:" + protectedFieldName);
                         result = true;
                         return result;
                     }
@@ -642,6 +649,7 @@ public final class AsmUtil {
             if (!classDescription.isNoProtectedMethod()) {
                 for (String protectedMethodName : classDescription.protectedMethodNameList) {
                     if (referencedClassDescription.referenceMethodNameMap.containsKey(protectedMethodName)) {
+                        logger.verbose("\tReferenced class:" + referencedClassName + ", has use protected method:" + protectedMethodName);
                         result = true;
                         return result;
                     }
