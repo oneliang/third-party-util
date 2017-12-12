@@ -770,7 +770,7 @@ public final class AsmUtil {
                 continue;
             }
 
-            if ((!classDescription.isPublicClass() && classDescription.isAnnotationClass()) || !classDescription.isNoPrivateField() || !classDescription.isNoFriendlyField() || !classDescription.isNoProtectedField() || !classDescription.isNoPrivateMethod() || !classDescription.isNoFriendlyMethod() || !classDescription.isNoProtectedMethod()) {
+            if (!classDescription.isPublicClass() || !classDescription.isNoPrivateField() || !classDescription.isNoFriendlyField() || !classDescription.isNoProtectedField() || !classDescription.isNoPrivateMethod() || !classDescription.isNoFriendlyMethod() || !classDescription.isNoProtectedMethod()) {
                 // if(classDescription!=null&&(!classDescription.isPublicClassChain()||!classDescription.isNoPrivateField()||!classDescription.isNoFriendlyField()||!classDescription.isNoProtectedField()||!classDescription.isNoPrivateMethod()||!classDescription.isNoFriendlyMethod()||!classDescription.isNoProtectedMethod())){
                 for (ClassDescription referencedClassDescription : referencedClassDescriptionList) {
                     String referencedClassName = referencedClassDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
@@ -808,27 +808,6 @@ public final class AsmUtil {
                     } else if (count < maxCount) {
                         queue.add(referencedClassName);
                     }
-                }
-            }
-
-            // find annotation
-            for (ClassDescription referencedClassDescription : referencedClassDescriptionList) {
-                if (!referencedClassDescription.isAnnotationClass()) {
-                    continue;
-                }
-                String referencedClassName = referencedClassDescription.className;
-                referencedClassName = referencedClassName + Constant.Symbol.DOT + Constant.File.CLASS;
-                if (dependClassNameMap.containsKey(referencedClassName)) {
-                    continue;
-                }
-                if (!allClassNameMap.containsKey(referencedClassName)) {
-                    continue;
-                }
-                dependClassNameMap.put(referencedClassName, referencedClassName);
-                if (deep) {
-                    queue.add(referencedClassName);
-                } else if (count < maxCount) {
-                    queue.add(referencedClassName);
                 }
             }
 
