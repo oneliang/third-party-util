@@ -9,6 +9,7 @@ public class ClassDescription {
 
 	public String className = null;
 	public String superClassName = null;
+	public String outerClassName = null;
 	public int access = 0;
 	public String sourceFile = null;
 	private boolean publicClass = false;

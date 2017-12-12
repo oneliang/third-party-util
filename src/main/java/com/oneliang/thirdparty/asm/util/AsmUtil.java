@@ -137,6 +137,9 @@ public final class AsmUtil {
         ClassDescription classDescription = new ClassDescription();
         classDescription.className = className;
         classDescription.sourceFile = classNode.sourceFile;
+        // class outer class
+        String outerClassName = classNode.outerClass;
+        classDescription.outerClassName = outerClassName;
         // class access
         classDescription.access = classNode.access;
         if (Modifier.isPublic(classDescription.access)) {
