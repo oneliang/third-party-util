@@ -13,7 +13,7 @@ import com.oneliang.util.file.FileUtil;
 import com.oneliang.util.logging.BaseLogger;
 import com.oneliang.util.logging.Logger;
 import com.oneliang.util.logging.LoggerManager;
-import com.sun.tools.javac.Main;
+//import com.sun.tools.javac.Main;
 
 public class TestJavacProcessor {
 
@@ -78,8 +78,8 @@ public class TestJavacProcessor {
 		}else{
 			throw new RuntimeException("source list can not be null or empty");
 		}
-//		return executeCommand(parameterList.toArray(new String[]{}));
-		return Main.compile(parameterList.toArray(new String[]{}));
+		return executeCommand(parameterList.toArray(new String[]{}));
+//		return Main.compile(parameterList.toArray(new String[]{}));
 	}
 
 	/**
