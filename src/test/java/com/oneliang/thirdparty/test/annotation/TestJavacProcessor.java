@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.oneliang.Constant;
+import com.oneliang.Constants;
 import com.oneliang.util.common.StringUtil;
 import com.oneliang.util.file.FileUtil;
 import com.oneliang.util.logging.BaseLogger;
@@ -18,8 +18,8 @@ import com.oneliang.util.logging.LoggerManager;
 public class TestJavacProcessor {
 
 	static{
-//		LoggerManager.registerLogger(Constant.Symbol.WILDCARD, new FileLogger(Logger.Level.VERBOSE, new File("/D:/a.txt")));
-		LoggerManager.registerLogger(Constant.Symbol.WILDCARD, new BaseLogger(Logger.Level.VERBOSE));
+//		LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new FileLogger(Logger.Level.VERBOSE, new File("/D:/a.txt")));
+		LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new BaseLogger(Logger.Level.VERBOSE));
 	}
 	private static final Logger logger=LoggerManager.getLogger(TestJavacProcessor.class);
 
@@ -54,7 +54,7 @@ public class TestJavacProcessor {
 		List<String> parameterList=new ArrayList<String>();
 //		parameterList.add("javac");
 		if(classpathList!=null&&!classpathList.isEmpty()){
-			String seperator=isWindowsOS?Constant.Symbol.SEMICOLON:Constant.Symbol.COLON;
+			String seperator=isWindowsOS?Constants.Symbol.SEMICOLON:Constants.Symbol.COLON;
 			parameterList.add("-classpath");
 			parameterList.add(listToCommandString(classpathList, null, seperator));
 		}
@@ -66,7 +66,7 @@ public class TestJavacProcessor {
 		parameterList.add("-d");
 		parameterList.add(destinationDirectory);
 		parameterList.add("-encoding");
-		parameterList.add(Constant.Encoding.UTF8);
+		parameterList.add(Constants.Encoding.UTF8);
 		
 		parameterList.add("-processor");
 		parameterList.add(AnnotationProcessor.class.getName());
@@ -193,7 +193,7 @@ public class TestJavacProcessor {
 				inputThread.interrupt();
 				process.destroy();
 			} catch (Exception e) {
-				logger.error(Constant.Base.EXCEPTION, e);
+				logger.error(Constants.Base.EXCEPTION, e);
 				throw new RuntimeException(e);
 			}
 		}
@@ -232,7 +232,7 @@ public class TestJavacProcessor {
 				}
 			}catch(Exception e) {
 				if(isWindowsOS()){//it has stream exception in linux
-					logger.error(Constant.Base.EXCEPTION,e);
+					logger.error(Constants.Base.EXCEPTION,e);
 				}
 			}finally{
 				if(this.inputStream!=null){
@@ -240,7 +240,7 @@ public class TestJavacProcessor {
 						this.inputStream.close();
 					} catch (Exception e) {
 						if(isWindowsOS()){
-							logger.error(Constant.Base.EXCEPTION,e);
+							logger.error(Constants.Base.EXCEPTION,e);
 						}
 					}
 				}

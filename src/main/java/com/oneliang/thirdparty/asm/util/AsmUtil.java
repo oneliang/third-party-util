@@ -32,7 +32,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 import org.objectweb.asm.util.TraceClassVisitor;
 
-import com.oneliang.Constant;
+import com.oneliang.Constants;
 import com.oneliang.util.common.StringUtil;
 import com.oneliang.util.file.FileUtil;
 import com.oneliang.util.logging.Logger;
@@ -128,8 +128,8 @@ public final class AsmUtil {
         }
         ClassNode classNode = new ClassNode();
         ConstantPool constantPool = new ConstantPool();
-        ClassConstantsCollector classConstantsCollector = new ClassConstantsCollector(classNode, constantPool);
-        classReader.accept(classConstantsCollector, 0);
+        ClassConstantsCollector classConstantssCollector = new ClassConstantsCollector(classNode, constantPool);
+        classReader.accept(classConstantssCollector, 0);
         // class name
         String className = classNode.name;
         // class super class
@@ -162,7 +162,7 @@ public final class AsmUtil {
         }
         // class outer class
         if (StringUtil.isNotBlank(classNode.outerClass) && StringUtil.isNotBlank(classNode.outerMethod) && StringUtil.isNotBlank(classNode.outerMethodDesc)) {
-            String referenceMethodName = classNode.outerClass + Constant.Symbol.DOT + classNode.outerMethod + Constant.Symbol.DOT + classNode.outerMethodDesc;
+            String referenceMethodName = classNode.outerClass + Constants.Symbol.DOT + classNode.outerMethod + Constants.Symbol.DOT + classNode.outerMethodDesc;
             if (!classDescription.referenceMethodNameMap.containsKey(referenceMethodName)) {
                 classDescription.referenceMethodNameMap.put(referenceMethodName, referenceMethodName);
             }
@@ -180,16 +180,16 @@ public final class AsmUtil {
                     addDependClassName(classDescription, internalName);
                 }
             } else if (entry.getValue().type == 'G') {
-                String referenceFieldName = entry.getValue().strVal1 + Constant.Symbol.DOT + entry.getValue().strVal2 + Constant.Symbol.DOT + entry.getValue().objVal3;
+                String referenceFieldName = entry.getValue().strVal1 + Constants.Symbol.DOT + entry.getValue().strVal2 + Constants.Symbol.DOT + entry.getValue().objVal3;
                 if (!classDescription.referenceFieldNameMap.containsKey(referenceFieldName)) {
                     classDescription.referenceFieldNameMap.put(referenceFieldName, referenceFieldName);
                     if (fieldProcessor != null) {
-                        String referenceFieldNameWithoutType = entry.getValue().strVal1 + Constant.Symbol.DOT + entry.getValue().strVal2;
+                        String referenceFieldNameWithoutType = entry.getValue().strVal1 + Constants.Symbol.DOT + entry.getValue().strVal2;
                         fieldProcessor.process(referenceFieldNameWithoutType, classDescription);
                     }
                 }
             } else if (entry.getValue().type == 'M') {
-                String referenceMethodName = entry.getValue().strVal1 + Constant.Symbol.DOT + entry.getValue().strVal2 + Constant.Symbol.DOT + entry.getValue().objVal3;
+                String referenceMethodName = entry.getValue().strVal1 + Constants.Symbol.DOT + entry.getValue().strVal2 + Constants.Symbol.DOT + entry.getValue().objVal3;
                 if (!classDescription.referenceMethodNameMap.containsKey(referenceMethodName)) {
                     classDescription.referenceMethodNameMap.put(referenceMethodName, referenceMethodName);
                 }
@@ -209,9 +209,9 @@ public final class AsmUtil {
         List<FieldNode> fieldNodeList = classNode.fields;
         if (fieldNodeList != null) {
             for (FieldNode fieldNode : fieldNodeList) {
-                String fieldName = className + Constant.Symbol.DOT + fieldNode.name + Constant.Symbol.DOT + fieldNode.desc;
+                String fieldName = className + Constants.Symbol.DOT + fieldNode.name + Constants.Symbol.DOT + fieldNode.desc;
                 classDescription.fieldNameList.add(fieldName);
-                classDescription.fieldFullNameList.add(fieldName + Constant.Symbol.DOT + fieldNode.access);
+                classDescription.fieldFullNameList.add(fieldName + Constants.Symbol.DOT + fieldNode.access);
                 // save field desc
                 if (!Modifier.isPublic(fieldNode.access)) {
                     if (Modifier.isPrivate(fieldNode.access)) {
@@ -235,9 +235,9 @@ public final class AsmUtil {
         List<MethodNode> methodNodeList = classNode.methods;
         if (methodNodeList != null) {
             for (MethodNode methodNode : methodNodeList) {
-                String methodName = className + Constant.Symbol.DOT + methodNode.name + Constant.Symbol.DOT + methodNode.desc;
+                String methodName = className + Constants.Symbol.DOT + methodNode.name + Constants.Symbol.DOT + methodNode.desc;
                 classDescription.methodNameList.add(methodName);
-                classDescription.methodFullNameList.add(methodName + Constant.Symbol.DOT + methodNode.access);
+                classDescription.methodFullNameList.add(methodName + Constants.Symbol.DOT + methodNode.access);
                 // save method desc
                 if (!Modifier.isPublic(methodNode.access) && !methodNode.name.equals("<clinit>")) {
                     if (Modifier.isPrivate(methodNode.access)) {
@@ -340,7 +340,7 @@ public final class AsmUtil {
                 while (enumeration.hasMoreElements()) {
                     ZipEntry zipEntry = enumeration.nextElement();
                     String zipEntryName = zipEntry.getName();
-                    if (zipEntryName.endsWith(Constant.Symbol.DOT + Constant.File.CLASS)) {
+                    if (zipEntryName.endsWith(Constants.Symbol.DOT + Constants.File.CLASS)) {
                         InputStream inputStream = zipFile.getInputStream(zipEntry);
                         ClassDescription classDescription = findClassDescription(inputStream, fieldProcessor);
                         classDescriptionMap.put(zipEntryName, classDescription);
@@ -349,7 +349,7 @@ public final class AsmUtil {
                             while (iterator.hasNext()) {
                                 Entry<String, String> entry = iterator.next();
                                 String dependClassName = entry.getValue();
-                                dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+                                dependClassName = dependClassName + Constants.Symbol.DOT + Constants.File.CLASS;
                                 List<ClassDescription> classDescriptionList = null;
                                 if (referencedClassDescriptionListMap.containsKey(dependClassName)) {
                                     classDescriptionList = referencedClassDescriptionListMap.get(dependClassName);
@@ -381,10 +381,10 @@ public final class AsmUtil {
     public static Map<String, ClassDescription> findClassDescriptionMap(String classesRootPath, Map<String, List<ClassDescription>> referencedClassDescriptionListMap) {
         Map<String, ClassDescription> classDescriptionMap = new HashMap<String, ClassDescription>();
         FileUtil.MatchOption matchOption = new FileUtil.MatchOption(classesRootPath);
-        matchOption.fileSuffix = Constant.Symbol.DOT + Constant.File.CLASS;
+        matchOption.fileSuffix = Constants.Symbol.DOT + Constants.File.CLASS;
         List<String> allClassFullFilenameList = FileUtil.findMatchFile(matchOption);
         if (allClassFullFilenameList != null) {
-            classesRootPath = new File(classesRootPath).getAbsolutePath() + Constant.Symbol.SLASH_LEFT;
+            classesRootPath = new File(classesRootPath).getAbsolutePath() + Constants.Symbol.SLASH_LEFT;
             for (String classFullFilename : allClassFullFilenameList) {
                 classFullFilename = new File(classFullFilename).getAbsolutePath();
                 ClassDescription classDescription = findClassDescription(classFullFilename);
@@ -395,8 +395,8 @@ public final class AsmUtil {
                         Entry<String, String> entry = iterator.next();
                         String dependClassName = entry.getValue();
                         // String dependClassFullFilename=new
-                        // File(classesRootPath+dependClassName+Constant.Symbol.DOT+Constant.File.CLASS).getAbsolutePath();
-                        dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+                        // File(classesRootPath+dependClassName+Constants.Symbol.DOT+Constants.File.CLASS).getAbsolutePath();
+                        dependClassName = dependClassName + Constants.Symbol.DOT + Constants.File.CLASS;
                         List<ClassDescription> classDescriptionList = null;
                         if (referencedClassDescriptionListMap.containsKey(dependClassName)) {
                             classDescriptionList = referencedClassDescriptionListMap.get(dependClassName);
@@ -433,7 +433,7 @@ public final class AsmUtil {
                 while (iterator.hasNext()) {
                     Entry<String, String> entry = iterator.next();
                     String dependClassName = entry.getValue();
-                    dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+                    dependClassName = dependClassName + Constants.Symbol.DOT + Constants.File.CLASS;
                     List<ClassDescription> classDescriptionList = null;
                     if (referencedClassDescriptionListMap.containsKey(dependClassName)) {
                         classDescriptionList = referencedClassDescriptionListMap.get(dependClassName);
@@ -496,7 +496,7 @@ public final class AsmUtil {
             return false;
         }
         String interfaceSuffixName = interfaceName.substring(className.length(), interfaceName.length());
-        if (interfaceSuffixName.startsWith(Constant.Symbol.DOLLAR)) {
+        if (interfaceSuffixName.startsWith(Constants.Symbol.DOLLAR)) {
             return true;
         }
         return false;
@@ -550,8 +550,8 @@ public final class AsmUtil {
     public static boolean isNeedToPutIntoTheSameClassLoader(ClassDescription classDescription, ClassDescription referencedClassDescription, Map<String, ClassDescription> classDescriptionMap) {
         boolean result = false;
         if (classDescription != null && referencedClassDescription != null) {
-            String className = classDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
-            String referencedClassName = referencedClassDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
+            String className = classDescription.className + Constants.Symbol.DOT + Constants.File.CLASS;
+            String referencedClassName = referencedClassDescription.className + Constants.Symbol.DOT + Constants.File.CLASS;
             if (!referencedClassDescription.dependClassNameMap.containsKey(classDescription.className)) {
                 return result;
             }
@@ -562,12 +562,12 @@ public final class AsmUtil {
             // package must use the use public or
             // protected method,keyword 'extends'
             String classPackage = StringUtil.BLANK;
-            int classNameSlashLeftLastIndex = className.lastIndexOf(Constant.Symbol.SLASH_LEFT);
+            int classNameSlashLeftLastIndex = className.lastIndexOf(Constants.Symbol.SLASH_LEFT);
             if (classNameSlashLeftLastIndex > 0) {
                 classPackage = className.substring(0, classNameSlashLeftLastIndex);
             }
             String referencedClassPackage = StringUtil.BLANK;
-            int referencedClassNameSlashLeftLastIndex = referencedClassName.lastIndexOf(Constant.Symbol.SLASH_LEFT);
+            int referencedClassNameSlashLeftLastIndex = referencedClassName.lastIndexOf(Constants.Symbol.SLASH_LEFT);
             if (referencedClassNameSlashLeftLastIndex > 0) {
                 referencedClassPackage = referencedClassName.substring(0, referencedClassNameSlashLeftLastIndex);
             }
@@ -671,12 +671,12 @@ public final class AsmUtil {
      * @return boolean
      */
     public static boolean isSuperClass(ClassDescription classDescription, ClassDescription referencedClassDescription, Map<String, ClassDescription> classDescriptionMap) {
-        String className = classDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
+        String className = classDescription.className + Constants.Symbol.DOT + Constants.File.CLASS;
         if (StringUtil.isBlank(referencedClassDescription.superClassName)) {
             return false;
         }
         Set<String> superClassNameSet = new HashSet<String>();
-        String referencedSuperClassName = referencedClassDescription.superClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+        String referencedSuperClassName = referencedClassDescription.superClassName + Constants.Symbol.DOT + Constants.File.CLASS;
         while (referencedSuperClassName != null) {
             if (classDescriptionMap.containsKey(referencedSuperClassName)) {
                 ClassDescription referencedSuperClassDescription = classDescriptionMap.get(referencedSuperClassName);
@@ -684,7 +684,7 @@ public final class AsmUtil {
                 if (StringUtil.isBlank(referencedSuperClassDescription.superClassName)) {
                     break;
                 }
-                referencedSuperClassName = referencedSuperClassDescription.superClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+                referencedSuperClassName = referencedSuperClassDescription.superClassName + Constants.Symbol.DOT + Constants.File.CLASS;
             } else {// may be library class,class description must be program
                     // class,and library class must be not depend program class
                 break;
@@ -741,7 +741,7 @@ public final class AsmUtil {
                 dependClassNameMap.put(className, className);
             }
             for (String dependClassName : classDescription.dependClassNameMap.keySet()) {
-                dependClassName = dependClassName + Constant.Symbol.DOT + Constant.File.CLASS;
+                dependClassName = dependClassName + Constants.Symbol.DOT + Constants.File.CLASS;
                 logger.verbose("\tdepend:" + dependClassName);
                 if (dependClassNameMap.containsKey(dependClassName)) {
                     continue;
@@ -776,7 +776,7 @@ public final class AsmUtil {
             if (!classDescription.isPublicClass() || !classDescription.isNoPrivateField() || !classDescription.isNoFriendlyField() || !classDescription.isNoProtectedField() || !classDescription.isNoPrivateMethod() || !classDescription.isNoFriendlyMethod() || !classDescription.isNoProtectedMethod()) {
                 // if(classDescription!=null&&(!classDescription.isPublicClassChain()||!classDescription.isNoPrivateField()||!classDescription.isNoFriendlyField()||!classDescription.isNoProtectedField()||!classDescription.isNoPrivateMethod()||!classDescription.isNoFriendlyMethod()||!classDescription.isNoProtectedMethod())){
                 for (ClassDescription referencedClassDescription : referencedClassDescriptionList) {
-                    String referencedClassName = referencedClassDescription.className + Constant.Symbol.DOT + Constant.File.CLASS;
+                    String referencedClassName = referencedClassDescription.className + Constants.Symbol.DOT + Constants.File.CLASS;
                     if (dependClassNameMap.containsKey(referencedClassName)) {
                         continue;
                     }
