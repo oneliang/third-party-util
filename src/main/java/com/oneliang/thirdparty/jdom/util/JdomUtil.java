@@ -7,7 +7,7 @@ import org.jdom.Attribute;
 import org.jdom.Document;
 import org.jdom.input.SAXBuilder;
 
-import com.oneliang.Constant;
+import com.oneliang.Constants;
 import com.oneliang.util.common.ObjectUtil;
 
 public final class JdomUtil{
@@ -52,7 +52,7 @@ public final class JdomUtil{
 		for(Attribute configAttribute:attributeList){
 			String attributeName=configAttribute.getName();
 			String attributeValue=configAttribute.getValue();
-			String methodName=ObjectUtil.fieldNameToMethodName(Constant.Method.PREFIX_SET,attributeName);
+			String methodName=ObjectUtil.fieldNameToMethodName(Constants.Method.PREFIX_SET,attributeName);
 			Method method=null;
 			try{
 				method=object.getClass().getMethod(methodName,String.class);

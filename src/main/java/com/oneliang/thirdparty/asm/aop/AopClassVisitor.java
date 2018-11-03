@@ -12,7 +12,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 
-import com.oneliang.Constant;
+import com.oneliang.Constants;
 
 public class AopClassVisitor extends ClassVisitor {
 
@@ -44,7 +44,7 @@ public class AopClassVisitor extends ClassVisitor {
 
 	private void checkJointerMethod(String classMethodName) {
 		if (classMethodName != null) {
-			int lastIndex = classMethodName.lastIndexOf(Constant.Symbol.DOT);
+			int lastIndex = classMethodName.lastIndexOf(Constants.Symbol.DOT);
 			String className = classMethodName.substring(0, lastIndex);
 			String methodName = classMethodName.substring(lastIndex + 1, classMethodName.length());
 			try {
@@ -134,10 +134,10 @@ public class AopClassVisitor extends ClassVisitor {
 //					}
 //				}
 				String classMethodName = this.jointer.getStaticMethodBefore();
-				int lastIndex = classMethodName.lastIndexOf(Constant.Symbol.DOT);
+				int lastIndex = classMethodName.lastIndexOf(Constants.Symbol.DOT);
 				String className = classMethodName.substring(0, lastIndex);
 				String methodName = classMethodName.substring(lastIndex + 1, classMethodName.length());
-				className = className.replace(Constant.Symbol.DOT, Constant.Symbol.SLASH_LEFT);
+				className = className.replace(Constants.Symbol.DOT, Constants.Symbol.SLASH_LEFT);
 //				this.methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, methodName, "([Ljava/lang/Object;)V", isInterface);
 				this.methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, methodName, "()V", isInterface);
 			}
@@ -147,10 +147,10 @@ public class AopClassVisitor extends ClassVisitor {
 			if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
 				if (this.jointer != null) {
 					String classMethodName = this.jointer.getStaticMethodAfter();
-					int lastIndex = classMethodName.lastIndexOf(Constant.Symbol.DOT);
+					int lastIndex = classMethodName.lastIndexOf(Constants.Symbol.DOT);
 					String className = classMethodName.substring(0, lastIndex);
 					String methodName = classMethodName.substring(lastIndex + 1, classMethodName.length());
-					className = className.replace(Constant.Symbol.DOT, Constant.Symbol.SLASH_LEFT);
+					className = className.replace(Constants.Symbol.DOT, Constants.Symbol.SLASH_LEFT);
 					this.methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, methodName, "()V", isInterface);
 				}
 			}
