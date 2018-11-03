@@ -462,7 +462,7 @@ public final class AsmUtil {
                 className = internalName.substring(groupList.get(0).length(), internalName.length() - 1);
             }
         }
-        if (StringUtil.isMatchRegex(className, ANDROID_SUPPORT_REGEX) || !StringUtil.isMatchRegex(className, REGEX)) {
+//        if (StringUtil.isMatchRegex(className, ANDROID_SUPPORT_REGEX) || !StringUtil.isMatchRegex(className, REGEX)) {
             if (!classDescription.dependClassNameMap.containsKey(className)) {
 
                 if (Modifier.isInterface(classDescription.access) && Modifier.isPublic(classDescription.access)) {
@@ -474,7 +474,7 @@ public final class AsmUtil {
                 classDescription.dependClassNameMap.put(className, className);
                 classDescription.dependClassNameList.add(className);
             }
-        }
+//        }
     }
 
     /**

@@ -13,16 +13,15 @@ import com.oneliang.util.file.FileUtil;
 import com.oneliang.util.logging.BaseLogger;
 import com.oneliang.util.logging.Logger;
 import com.oneliang.util.logging.LoggerManager;
-import com.sun.tools.javac.Main;
+//import com.sun.tools.javac.Main;
 
 public class TestJavacProcessor {
 
-    static {
-        // LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new
-        // FileLogger(Logger.Level.VERBOSE, new File("/D:/a.txt")));
-        LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new BaseLogger(Logger.Level.VERBOSE));
-    }
-    private static final Logger logger = LoggerManager.getLogger(TestJavacProcessor.class);
+	static{
+//		LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new FileLogger(Logger.Level.VERBOSE, new File("/D:/a.txt")));
+		LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new BaseLogger(Logger.Level.VERBOSE));
+	}
+	private static final Logger logger=LoggerManager.getLogger(TestJavacProcessor.class);
 
     private static boolean isWindowsOS = false;
     static {
@@ -80,8 +79,8 @@ public class TestJavacProcessor {
         } else {
             throw new RuntimeException("source list can not be null or empty");
         }
-        // return executeCommand(parameterList.toArray(new String[]{}));
-        return Main.compile(parameterList.toArray(new String[] {}));
+         return executeCommand(parameterList.toArray(new String[]{}));
+//        return Main.compile(parameterList.toArray(new String[] {}));
     }
 
     /**
