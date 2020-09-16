@@ -17,13 +17,15 @@ import com.oneliang.util.logging.LoggerManager;
 
 public class TestJavacProcessor {
 
-	static{
+    static {
 //		LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new FileLogger(Logger.Level.VERBOSE, new File("/D:/a.txt")));
-		LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new BaseLogger(Logger.Level.VERBOSE));
-	}
-	private static final Logger logger=LoggerManager.getLogger(TestJavacProcessor.class);
+        LoggerManager.registerLogger(Constants.Symbol.WILDCARD, new BaseLogger(Logger.Level.VERBOSE));
+    }
+
+    private static final Logger logger = LoggerManager.getLogger(TestJavacProcessor.class);
 
     private static boolean isWindowsOS = false;
+
     static {
         String osName = System.getProperty("os.name");
         if (StringUtil.isNotBlank(osName) && osName.toLowerCase().indexOf("windows") > -1) {
@@ -44,12 +46,12 @@ public class TestJavacProcessor {
 
     /**
      * tool.jar javac
-     * 
+     *
      * @param classpathList
      * @param sourceList
      * @param destinationDirectory
      * @param isDebug
-     * @return int,exit code
+     * @return int, exit code
      */
     public static int javac(List<String> classpathList, List<String> sourceList, String destinationDirectory, boolean isDebug) {
         List<String> parameterList = new ArrayList<String>();
@@ -79,13 +81,13 @@ public class TestJavacProcessor {
         } else {
             throw new RuntimeException("source list can not be null or empty");
         }
-         return executeCommand(parameterList.toArray(new String[]{}));
+        return executeCommand(parameterList.toArray(new String[]{}));
 //        return Main.compile(parameterList.toArray(new String[] {}));
     }
 
     /**
      * list to command string
-     * 
+     *
      * @param stringList
      * @param appendString
      * @param seperator
@@ -106,9 +108,9 @@ public class TestJavacProcessor {
 
     /**
      * execute command
-     * 
-     * @param command
-     * @return int,exit code
+     *
+     * @param commandArray
+     * @return int, exit code
      */
     public static int executeCommand(String[] commandArray) {
         return executeCommand(commandArray, true);
@@ -116,10 +118,10 @@ public class TestJavacProcessor {
 
     /**
      * execute command
-     * 
-     * @param command
+     *
+     * @param commandArray
      * @param needToLogCommand
-     * @return int,exit code
+     * @return int, exit code
      */
     public static int executeCommand(String[] commandArray, boolean needToLogCommand) {
         return executeCommand(commandArray, null, needToLogCommand, true, true);
@@ -127,12 +129,12 @@ public class TestJavacProcessor {
 
     /**
      * execute command
-     * 
+     *
      * @param commandArray
      * @param needToLogCommand
      * @param needToLogNormal
      * @param needToLogError
-     * @return int,exit code
+     * @return int, exit code
      */
     public static int executeCommand(String[] commandArray, boolean needToLogCommand, boolean needToLogNormal, boolean needToLogError) {
         return executeCommand(commandArray, null, needToLogCommand, needToLogNormal, needToLogError);
@@ -140,10 +142,10 @@ public class TestJavacProcessor {
 
     /**
      * execute command
-     * 
+     *
      * @param commandArray
      * @param environmentParameter
-     * @return int,exit code
+     * @return int, exit code
      */
     public static int executeCommand(String[] commandArray, String[] environmentParameter) {
         return executeCommand(commandArray, environmentParameter, true, true, true);
@@ -151,11 +153,11 @@ public class TestJavacProcessor {
 
     /**
      * execute command
-     * 
+     *
      * @param commandArray
      * @param environmentParameter
      * @param needToLogCommand
-     * @return int,exit code
+     * @return int, exit code
      */
     public static int executeCommand(String[] commandArray, String[] environmentParameter, boolean needToLogCommand) {
         return executeCommand(commandArray, environmentParameter, needToLogCommand, true, true);
@@ -163,13 +165,13 @@ public class TestJavacProcessor {
 
     /**
      * execute command
-     * 
-     * @param command
+     *
+     * @param commandArray
      * @param environmentParameter
      * @param needToLogCommand
      * @param needToLogNormal
      * @param needToLogError
-     * @return int,exit code
+     * @return int, exit code
      */
     public static int executeCommand(String[] commandArray, String[] environmentParameter, boolean needToLogCommand, boolean needToLogNormal, boolean needToLogError) {
         int result = Integer.MIN_VALUE;
@@ -188,7 +190,7 @@ public class TestJavacProcessor {
                         commandStringBuilder.append(command.trim() + StringUtil.SPACE);
                     }
                     if (needToLogCommand) {
-                        logger.verbose(commandStringBuilder);
+                        logger.verbose(commandStringBuilder.toString());
                     }
                     process = Runtime.getRuntime().exec(commandArray, environmentParameter);
                 }
@@ -210,7 +212,7 @@ public class TestJavacProcessor {
 
     /**
      * is window os
-     * 
+     *
      * @return boolean
      */
     public static boolean isWindowsOS() {

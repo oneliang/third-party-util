@@ -24,10 +24,9 @@ sourceSets {
 }
 
 repositories {
-	mavenLocal()
-    maven { 
-    	url 'http://repo1.maven.org/maven2' 
-    }
+    mavenLocal()
+    google()
+    jcenter()
 }
 
 dependencies {

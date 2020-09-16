@@ -128,8 +128,8 @@ public final class AsmUtil {
         }
         ClassNode classNode = new ClassNode();
         ConstantPool constantPool = new ConstantPool();
-        ClassConstantsCollector classConstantssCollector = new ClassConstantsCollector(classNode, constantPool);
-        classReader.accept(classConstantssCollector, 0);
+        ClassConstantsCollector classConstantsCollector = new ClassConstantsCollector(classNode, constantPool);
+        classReader.accept(classConstantsCollector, 0);
         // class name
         String className = classNode.name;
         // class super class
